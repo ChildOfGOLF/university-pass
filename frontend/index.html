@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>СУАЙ КУАР</title>
+    <link rel="stylesheet" href="./css/fonts.css" />
+    <link rel="stylesheet" href="./css/global.css" />
+    <link rel="stylesheet" href="./css/variables.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/animations.css" />
+    <link rel="icon" href="" size="any" />
+    <link rel="icon" href="" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="" />
+  </head>
+  <body class="page">
+    <form class="login-form">
+      <div class="form-group">
+        <input type="email" id="email" placeholder="Сюда логин" required />
+        <div class="error-message" id="ErrorEmail">
+          Введите корректный email
+        </div>
+      </div>
+      <div class="form-group">
+        <input
+          type="password"
+          id="password"
+          placeholder="Сюда пароль"
+          required
+          minlength="6"
+        />
+        <button type="button" id="toggle-password">_</button>
+        <div class="error-message" id="ErrorPassword">
+          Пароль должен содержать миниммум 6 символов
+        </div>
+      </div>
+      <div class="error-message" id="error"></div>
+      <button type="submit" id="submit-button" class="submit-button">
+        Войти
+      </button>
+      <label class="form-group">
+        <input type="checkbox" id="rememberMe" />
+        Запомнить меня
+      </label>
+    </form>
+    <script type="module" src="./js/auth.js"></script>
+  </body>
+</html>
