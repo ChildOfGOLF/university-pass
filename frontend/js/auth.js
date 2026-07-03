@@ -37,7 +37,7 @@ function clearError() {
 
 toggleButton.addEventListener('click', () => {
     let passwordCheck = passwordInput.type == "password";
-    passwordInput = passwordCheck ? 'text' : 'password';
+    passwordInput.type = passwordCheck ? 'text' : 'password';
     toggleButton.textContent = passwordCheck ? '_' : 'o';
 });
 
@@ -68,6 +68,8 @@ form.addEventListener('submit', async(event) => {
             password,
             device_id: getDeviceId()
         });
+
+        console.log(secret_key);
 
         if (!secret_key) {
             throw new Error('Не вернул сикрит ки');
