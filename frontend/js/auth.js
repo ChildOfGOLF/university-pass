@@ -13,6 +13,14 @@ const toggleButton = document.getElementById("toggle-button");
 const errorElement = document.getElementById('Error');
 const remembrMe = document.getElementById('rememberMe');
 
+function getDeviceId() {
+    let deviceId = localStorage.getItem('device_id');
+    if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem('device_id', deviceId);
+    }
+    return deviceId;
+}
 
 function setLoading(isLoading) {
     submitButton.disabled = isLoading;
@@ -55,8 +63,11 @@ form.addEventListener('submit', async(event) => {
     setLoading(true);
 
     try {
-        await apiMethods.login({login, password});
-        const {secret_key} = await apiMethods.registerDevice();
+        const {secret_key} = await apiMethods.login({
+            email: login,
+            password,
+            device_id: getDeviceId()
+        });
 
         if (!secret_key) {
             throw new Error('Не вернул сикрит ки');

@@ -1,11 +1,12 @@
 //Обертка для всех эндпойнтов
-const BASE_URL = "/...";
+const BASE_URL = "https://localhost:8080";
 
 async function request(path, options = {}) {
     const res = await fetch(BASE_URL + path, {
         headers: {
             'Content-Type': 'application/json', ...options.headers
         },
+        credentials: 'include',
         ...options
     });
     if (!res.ok) {
@@ -17,5 +18,4 @@ async function request(path, options = {}) {
 
 export const apiMethods = {
     login: (data) => request('/auth/login', {method: "POST", body: JSON.stringify(data)}),
-    
 }
