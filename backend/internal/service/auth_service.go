@@ -5,8 +5,12 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"fmt"
+	"time"
 
 	"university-pass/internal/repository"
+
+	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -62,4 +66,40 @@ func generateTOTPSecret() (string, error) {
 		return "", err
 	}
 	return base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(secret), nil
+}
+
+type VerifyUserResult struct {
+	IsAllowed bool
+	Reason    string
+}
+
+func (s *AuthService) VerifyUser(ctx context.Context, userID int, otpCode string) (*VerifyUserResult, error) {
+	device, err := s.repo.GetDeviceByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get device: %w", err)
+	}
+	if device == nil {
+		return &VerifyUserResult{
+			IsAllowed: false,
+			Reason:    "device not found",
+		}, nil
+	}
+
+	ok, _ := totp.ValidateCustom(otpCode, device.SecretKey, time.Now().UTC(), totp.ValidateOpts{
+		Period:    30,
+		Skew:      1,
+		Digits:    otp.DigitsSix,
+		Algorithm: otp.AlgorithmSHA1,
+	})
+	if !ok {
+		return &VerifyUserResult{
+			IsAllowed: false,
+			Reason:    "invalid otp",
+		}, nil
+	}
+
+	return &VerifyUserResult{
+		IsAllowed: true,
+		Reason:    "",
+	}, nil
 }

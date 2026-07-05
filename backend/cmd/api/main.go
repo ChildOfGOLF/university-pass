@@ -41,6 +41,7 @@ func main() {
 	})
 
 	r.Post("/auth/login", authHandler.Login)
+	r.Post("/scan/verify-user", authHandler.VerifyUser)
 
 	fmt.Println("running: 8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
