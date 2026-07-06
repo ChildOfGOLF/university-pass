@@ -40,14 +40,22 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 }
 
 func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*model.UserDevice, error) {
-	query := `SELECT user_id, device_id, secret_key, updated_at 
-	          FROM user_devices WHERE user_id = $1`
+	query := `
+		SELECT user_id, device_id, secret_key, last_used_step, created_at, updated_at
+		FROM user_devices
+		WHERE user_id = $1
+	`
 
 	var d model.UserDevice
 
 	err := r.db.Pg.QueryRow(ctx, query, userID).Scan(
-		&d.UserID, &d.DeviceID, &d.SecretKey, &d.UpdatedAt)
-
+		&d.UserID,
+		&d.DeviceID,
+		&d.SecretKey,
+		&d.LastUsedStep,
+		&d.CreatedAt,
+		&d.UpdatedAt,
+	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -88,13 +96,16 @@ func (r *UserRepository) GetPasswordHashByUserID(ctx context.Context, userID int
 
 func (r *UserRepository) UpdateLastUsedStepIfGreater(ctx context.Context, userID int, step int64) (bool, error) {
 	query := `
-	UPDATE user_devices
-	SET last_used_step = $1, updated_at = NOW()
-	WHERE user_id = $2 AND (last_used_step IS NULL OR last_used_step < $1)
-	`
+		UPDATE user_devices
+		SET last_used_step = $1, updated_at = NOW()
+		WHERE user_id = $2
+		  AND (last_used_step IS NULL OR last_used_step < $1)
+`
+
 	cmd, err := r.db.Pg.Exec(ctx, query, step, userID)
 	if err != nil {
 		return false, err
 	}
+
 	return cmd.RowsAffected() == 1, nil
 }
