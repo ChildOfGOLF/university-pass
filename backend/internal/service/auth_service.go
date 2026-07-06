@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"fmt"
-	"strings"
 	"time"
 	"university-pass/internal/model"
 
@@ -95,34 +94,6 @@ func (s *AuthService) VerifyUser(ctx context.Context, userID int, otpCode, scann
 		_ = s.repo.EnqueueAccessLog(ctx, evt)
 		return &VerifyUserResult{IsAllowed: false, Reason: "device not found"}, nil
 	}
-
-	// --- DEBUG START ---
-	fmt.Printf("DEBUG request otp: %q\n", otpCode)
-	fmt.Printf("DEBUG device.SecretKey raw: %q (len=%d)\n", device.SecretKey, len(device.SecretKey))
-
-	// trim spaces and uppercase for base32 canonicalization
-	trimmed := strings.TrimSpace(device.SecretKey)
-	upper := strings.ToUpper(trimmed)
-	decoded, decErr := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(upper)
-
-	fmt.Printf("DEBUG base32 decode err: %v decoded_len=%d\n", decErr, len(decoded))
-	if decErr == nil {
-		norm := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(decoded)
-		fmt.Printf("DEBUG normalized secret (re-encoded): %q (len=%d)\n", norm, len(norm))
-	} else {
-		fmt.Printf("DEBUG cannot normalize secret\n")
-	}
-
-	// server-generated codes for window [-1, 0, +1]
-	now := time.Now().UTC()
-	for i := -1; i <= 1; i++ {
-		t := now.Add(time.Duration(i*30) * time.Second)
-		code, genErr := totp.GenerateCode(device.SecretKey, t)
-		step := t.Unix() / 30
-		fmt.Printf("DEBUG server code offset=%+d code=%q genErr=%v time=%s step=%d\n", i, code, genErr, t.Format(time.RFC3339), step)
-	}
-	fmt.Printf("DEBUG current server step: %d\n", now.Unix()/30)
-	// --- DEBUG END ---
 
 	ok, _ := totp.ValidateCustom(otpCode, device.SecretKey, time.Now().UTC(), totp.ValidateOpts{
 		Period:    30,
