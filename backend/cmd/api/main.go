@@ -25,6 +25,10 @@ func main() {
 	}
 	defer db.Pg.Close()
 
+	if db.Rdb != nil {
+		defer db.Rdb.Close()
+	}
+
 	userRepo := repository.NewUserRepository(db)
 	authService := service.NewAuthService(userRepo)
 	authHandler := handler.NewAuthHandler(authService)

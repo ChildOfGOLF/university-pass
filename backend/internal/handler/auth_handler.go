@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"university-pass/internal/model"
 	"university-pass/internal/service"
 )
 
@@ -79,8 +80,9 @@ type VerifyUserRequest struct {
 }
 
 type VerifyUserResponse struct {
-	IsAllowed bool   `json:"is_allowed"`
-	Reason    string `json:"reason"`
+	IsAllowed bool        `json:"is_allowed"`
+	Reason    string      `json:"reason"`
+	User      *model.User `json:"user,omitempty"` // TODO: подумать над *model
 }
 
 func (h *AuthHandler) VerifyUser(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +97,10 @@ func (h *AuthHandler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.authService.VerifyUser(r.Context(), req.UserID, req.OTP)
+	// TODO: определить accessPointID по scannerID; пока что 0 или искать в бд
+	accessPointID := 0
+
+	result, err := h.authService.VerifyUser(r.Context(), req.UserID, req.OTP, req.ScannerID, req.Direction, accessPointID)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -104,5 +109,6 @@ func (h *AuthHandler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, http.StatusOK, VerifyUserResponse{
 		IsAllowed: result.IsAllowed,
 		Reason:    result.Reason,
+		User:      result.User,
 	})
 }
