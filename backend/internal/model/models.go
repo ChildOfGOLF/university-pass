@@ -17,7 +17,7 @@ type User struct {
 type UserDevice struct {
 	UserID       int       `json:"user_id"`
 	DeviceID     string    `json:"device_id"`
-	SecretKey    string    `json:"-"`
+	SecretKey    string    `json:"secret_key"`
 	LastUsedStep *int64    `json:"last_used_step,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -32,6 +32,7 @@ type GuestPass struct {
 	ValidFrom  time.Time `json:"valid_from"`
 	ValidTo    time.Time `json:"valid_to"`
 	IsUsed     bool      `json:"is_used"`
+	IsEntered  bool      `json:"is_entered"` // TODO: think about this field
 	CreatedAt  time.Time `json:"created_at"`
 }
 
@@ -58,4 +59,28 @@ type Building struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
 	Address string `json:"address,omitempty"`
+}
+
+type ScanUserResult struct {
+	IsAllowed bool   `json:"is_allowed"`
+	Reason    string `json:"reason"`
+	User      *User  `json:"user,omitempty"`
+}
+
+type AccessLogEvent struct {
+	Type          string    `json:"type"` // eg scan
+	UserID        *int      `json:"user_id,omitempty"`
+	GuestPassID   *string   `json:"guest_pass_id,omitempty"`
+	AccessPointID int       `json:"access_point_id,omitempty"`
+	Direction     string    `json:"direction"`
+	IsAllowed     bool      `json:"is_allowed"`
+	Reason        string    `json:"reason,omitempty"`
+	ScannerID     string    `json:"scanner_id"`
+	LoggedAt      time.Time `json:"logged_at"`
+}
+
+type VerifyGuestResult struct {
+	IsAllowed bool       `json:"is_allowed"`
+	Reason    string     `json:"reason"`
+	Guest     *GuestPass `json:"guest,omitempty"`
 }

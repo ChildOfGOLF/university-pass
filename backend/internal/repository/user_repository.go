@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 	"university-pass/internal/database"
 	"university-pass/internal/model"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 type UserRepository struct {
@@ -39,7 +42,43 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 	return &u, nil
 }
 
+func (r *UserRepository) GetByUserID(ctx context.Context, userID int) (*model.User, error) {
+	query := `SELECT u.id, u.email, u.first_name, u.last_name, u.patronymic,
+       COALESCE(u.avatar_url, '') AS avatar_url,
+       r.name AS role, u.is_active, u.created_at
+		FROM users u
+		JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1`
+
+	var u model.User
+
+	err := r.db.Pg.QueryRow(ctx, query, userID).Scan(
+		&u.ID, &u.Email, &u.FirstName, &u.LastName, &u.Patronymic, &u.AvatarURL, &u.Role, &u.IsActive, &u.CreatedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &u, nil
+}
+
 func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*model.UserDevice, error) {
+	key := fmt.Sprintf("user:device:%d", userID)
+
+	if r.db.Rdb != nil {
+		val, err := r.db.Rdb.Get(ctx, key).Result()
+		if err == nil {
+			var d model.UserDevice
+			if err := json.Unmarshal([]byte(val), &d); err == nil {
+				return &d, nil
+			}
+		} else if err != redis.Nil {
+			return nil, fmt.Errorf("failed to get device from redis: %w", err)
+		}
+	}
+
 	query := `
 		SELECT user_id, device_id, secret_key, last_used_step, created_at, updated_at
 		FROM user_devices
@@ -62,6 +101,13 @@ func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*mo
 		}
 		return nil, err
 	}
+
+	if r.db.Rdb != nil {
+		if b, err := json.Marshal(d); err == nil {
+			_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
+		}
+	}
+
 	return &d, nil
 }
 
@@ -76,6 +122,20 @@ func (r *UserRepository) UpsertDeviceSecret(ctx context.Context, userID int, dev
 	_, err := r.db.Pg.Exec(ctx, query, userID, deviceID, secretKey)
 	if err != nil {
 		return fmt.Errorf("failed to upsert device secret: %w", err)
+	}
+
+	if r.db.Rdb != nil {
+		key := fmt.Sprintf("user:device:%d", userID)
+		var lastUsedStep *int64 = nil
+		d := model.UserDevice{
+			UserID:       userID,
+			DeviceID:     deviceID,
+			SecretKey:    secretKey,
+			LastUsedStep: lastUsedStep,
+		}
+		if b, err := json.Marshal(d); err == nil {
+			_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
+		}
 	}
 
 	return nil
@@ -108,4 +168,17 @@ func (r *UserRepository) UpdateLastUsedStepIfGreater(ctx context.Context, userID
 	}
 
 	return cmd.RowsAffected() == 1, nil
+}
+
+func (r *UserRepository) EnqueueAccessLog(ctx context.Context, event model.AccessLogEvent) error {
+	if r.db.Rdb == nil {
+		return nil
+	}
+
+	b, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	return r.db.Rdb.RPush(ctx, "logs:queue", b).Err()
 }
