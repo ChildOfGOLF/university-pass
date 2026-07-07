@@ -32,6 +32,7 @@ type GuestPass struct {
 	ValidFrom  time.Time `json:"valid_from"`
 	ValidTo    time.Time `json:"valid_to"`
 	IsUsed     bool      `json:"is_used"`
+	IsEntered  bool      `json:"is_entered"` // TODO: think about this field
 	CreatedAt  time.Time `json:"created_at"`
 }
 
@@ -76,4 +77,10 @@ type AccessLogEvent struct {
 	Reason        string    `json:"reason,omitempty"`
 	ScannerID     string    `json:"scanner_id"`
 	LoggedAt      time.Time `json:"logged_at"`
+}
+
+type VerifyGuestResult struct {
+	IsAllowed bool       `json:"is_allowed"`
+	Reason    string     `json:"reason"`
+	Guest     *GuestPass `json:"guest,omitempty"`
 }

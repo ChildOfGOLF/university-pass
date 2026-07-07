@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS guest_passes (
   valid_from TIMESTAMP WITH TIME ZONE NOT NULL,
   valid_to TIMESTAMP WITH TIME ZONE NOT NULL,
   is_used BOOLEAN NOT NULL DEFAULT false,
+  is_entered BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT chk_guest_window CHECK (valid_to > valid_from)
 );
@@ -108,5 +109,28 @@ VALUES (
 INSERT INTO passwords (password_id, password_hash)
 SELECT id, '$2a$10$N.VTcjd1Yw9dYqcPNpGuSO0RqASum/Jfp6ktBJIafn2VEMoYuT5ve'
 FROM new_user;
+
+INSERT INTO guest_passes (
+    id,
+    last_name,
+    first_name,
+    patronymic,
+    purpose,
+    valid_from,
+    valid_to,
+    is_used,
+    is_entered
+)
+VALUES (
+           '550e8400-e29b-41d4-a716-446655440000',
+           'guest',
+           'guest',
+           'guest',
+           'Event guest',
+           NOW() - INTERVAL '5 minutes',
+           NOW() + INTERVAL '30 minutes',
+           FALSE,
+           FALSE
+       );
 
 COMMIT;
