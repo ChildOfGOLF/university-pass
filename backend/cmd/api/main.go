@@ -31,8 +31,17 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	guestRepo := repository.NewGuestRepository(db)
+	logRepo := repository.NewLogRepository(db.Pg)
 	authService := service.NewAuthService(userRepo, guestRepo)
-	authHandler := handler.NewAuthHandler(authService)
+	logService := service.NewLogService(logRepo, db.Rdb)
+
+	accessRepo := repository.NewAccessPointRepository(db)
+
+	authHandler := handler.NewAuthHandler(authService, accessRepo)
+
+	workerCtx := context.Background()
+	go logService.StartLogWorker(workerCtx)
+	log.Println("Log worker started")
 
 	r := chi.NewRouter()
 

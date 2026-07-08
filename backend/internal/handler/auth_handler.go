@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"university-pass/internal/model"
+	"university-pass/internal/repository"
 	"university-pass/internal/service"
 )
 
 type AuthHandler struct {
 	authService *service.AuthService
+	apRepo      *repository.AccessPointRepository
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService *service.AuthService, apRepo *repository.AccessPointRepository) *AuthHandler {
+	return &AuthHandler{authService: authService, apRepo: apRepo}
 }
 
 type LoginRequest struct {
@@ -110,7 +112,16 @@ func (h *AuthHandler) VerifyUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: определить accessPointID по scannerID; пока что 0 или искать в бд
-	accessPointID := 0
+	ap, err := h.apRepo.GetByScannerID(r.Context(), req.ScannerID)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "failed to lookup scanner")
+		return
+	}
+	if ap == nil {
+		sendError(w, http.StatusBadRequest, "unknown scanner_id")
+		return
+	}
+	accessPointID := ap.ID
 
 	result, err := h.authService.VerifyUser(r.Context(), req.UserID, req.OTP, req.ScannerID, req.Direction, accessPointID)
 	if err != nil {
@@ -138,7 +149,16 @@ func (h *AuthHandler) VerifyGuest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: определить accessPointID по scannerID; пока что 0 или искать в бд
-	accessPointID := 0
+	ap, err := h.apRepo.GetByScannerID(r.Context(), req.ScannerID)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "failed to lookup scanner")
+		return
+	}
+	if ap == nil {
+		sendError(w, http.StatusBadRequest, "unknown scanner_id")
+		return
+	}
+	accessPointID := ap.ID
 
 	result, err := h.authService.VerifyGuest(r.Context(), req.GuestID, req.ScannerID, req.Direction, accessPointID)
 	if err != nil {

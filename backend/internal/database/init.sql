@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS access_logs (
   user_id INT REFERENCES users(id) ON DELETE SET NULL,
   guest_pass_id UUID REFERENCES guest_passes(id) ON DELETE SET NULL,
   access_point_id INT NOT NULL REFERENCES access_points(id),
-  direction VARCHAR(10) NOT NULL CHECK (direction IN ('enter', 'out')),
+  direction VARCHAR(10) NOT NULL CHECK (direction IN ('enter', 'exit')),
   is_allowed BOOLEAN NOT NULL,
   reason VARCHAR(255),
   logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -132,5 +132,16 @@ VALUES (
            FALSE,
            FALSE
        );
+
+INSERT INTO buildings (name, address)
+SELECT 'Main', 'Bolshaya Morskaya'
+WHERE NOT EXISTS (SELECT 1 FROM buildings WHERE name = 'Main Building');
+
+-- тестовая точка
+INSERT INTO access_points (building_id, scanner_id, gate_number, description)
+SELECT b.id, 'SCANNER_001', 'G1', 'Main entrance'
+FROM buildings b
+WHERE b.name = 'Main'
+  AND NOT EXISTS (SELECT 1 FROM access_points WHERE scanner_id = 'SCANNER_001');
 
 COMMIT;
