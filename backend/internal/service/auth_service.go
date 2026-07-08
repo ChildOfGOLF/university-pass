@@ -6,9 +6,11 @@ import (
 	"encoding/base32"
 	"fmt"
 	"time"
+	"university-pass/internal/middleware"
 	"university-pass/internal/model"
 	"university-pass/internal/repository"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 
@@ -347,4 +349,35 @@ func (s *AuthService) VerifyGuest(ctx context.Context, guestID, scannerID, direc
 		_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
 		return &VerifyGuestResult{IsAllowed: false, Reason: "invalid direction"}, nil
 	}
+}
+
+func (s *AuthService) AdminLogin(ctx context.Context, email, password string) (string, error) {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil || user.Role != "admin" {
+		return "", fmt.Errorf("invalid credentials")
+	}
+	if !user.IsActive {
+		return "", fmt.Errorf("user is not active")
+	}
+
+	hash, err := s.userRepo.GetPasswordHashByUserID(ctx, user.ID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get password hash: %w", err)
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
+		return "", fmt.Errorf("invalid credentials")
+	}
+
+	claims := middleware.Claims{
+		UserID: user.ID,
+		Role:   user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(8 * time.Hour)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte("vBS0K4W5DRo2iTQI1JmnuqIouvnHaBbsyvXxqk1Ibhz")) // TODO: move to env
 }

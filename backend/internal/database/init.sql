@@ -144,4 +144,15 @@ FROM buildings b
 WHERE b.name = 'Main'
   AND NOT EXISTS (SELECT 1 FROM access_points WHERE scanner_id = 'SCANNER_001');
 
+WITH new_admin AS (
+    INSERT INTO users (role_id, email, last_name, first_name, patronymic)
+        VALUES ((SELECT id FROM roles WHERE name='admin'), 'admin@uni.com', 'Admin', 'Admin', '')
+        RETURNING id
+)
+INSERT INTO passwords (password_id, password_hash)
+SELECT id, '$2a$10$N.VTcjd1Yw9dYqcPNpGuSO0RqASum/Jfp6ktBJIafn2VEMoYuT5ve'
+FROM new_admin;
+
+INSERT INTO groups (group_name) VALUES ('1443') ON CONFLICT DO NOTHING;
+
 COMMIT;

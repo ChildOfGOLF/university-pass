@@ -8,6 +8,7 @@ import (
 	"time"
 	"university-pass/internal/database"
 	"university-pass/internal/handler"
+	mw "university-pass/internal/middleware"
 	"university-pass/internal/repository"
 	"university-pass/internal/service"
 
@@ -38,6 +39,9 @@ func main() {
 	accessRepo := repository.NewAccessPointRepository(db)
 
 	authHandler := handler.NewAuthHandler(authService, accessRepo)
+	userAdminHandler := handler.NewAdminUserHandler(userRepo)
+	guestAdminHandler := handler.NewAdminGuestHandler(guestRepo)
+	adminAuthHandler := handler.NewAdminAuthHandler(authService)
 
 	workerCtx := context.Background()
 	go logService.StartLogWorker(workerCtx)
@@ -54,6 +58,26 @@ func main() {
 		w.Write([]byte(`{"status": "ok", "message": "pong"}`))
 	})
 
+	r.Route("/admin", func(r chi.Router) {
+		r.Post("/auth/login", adminAuthHandler.Login)
+
+		r.Group(func(r chi.Router) {
+			r.Use(mw.RequireRole("admin"))
+
+			r.Route("/users", func(r chi.Router) {
+				r.Post("/", userAdminHandler.Create)
+				r.Get("/", userAdminHandler.List)
+				r.Patch("/{id}", userAdminHandler.Update)
+				r.Delete("/{id}", userAdminHandler.Deactivate) // soft
+			})
+
+			r.Route("/guests", func(r chi.Router) {
+				r.Post("/", guestAdminHandler.Create)
+				r.Get("/", guestAdminHandler.List)
+				r.Post("/{id}/revoke", guestAdminHandler.Revoke)
+			})
+		})
+	})
 	r.Post("/auth/login", authHandler.Login)
 	r.Post("/scan/verify-user", authHandler.VerifyUser)
 	r.Post("/scan/verify-guest", authHandler.VerifyGuest)

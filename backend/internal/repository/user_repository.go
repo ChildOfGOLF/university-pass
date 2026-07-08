@@ -182,3 +182,117 @@ func (r *UserRepository) EnqueueAccessLog(ctx context.Context, event model.Acces
 
 	return r.db.Rdb.RPush(ctx, "logs:queue", b).Err()
 }
+
+func (r *UserRepository) GetRoleIDByName(ctx context.Context, name string) (int, error) {
+	var id int
+	err := r.db.Pg.QueryRow(ctx, `SELECT id FROM roles WHERE name = $1`, name).Scan(&id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return 0, fmt.Errorf("unknown role: %s", name)
+		}
+		return 0, fmt.Errorf("failed to get role: %w", err)
+	}
+	return id, nil
+}
+
+type CreateUserParams struct {
+	Email        string
+	LastName     string
+	FirstName    string
+	Patronymic   string
+	Phone        string
+	RoleID       int
+	RoleName     string
+	GroupID      *int
+	PasswordHash string
+}
+
+func (r *UserRepository) CreateUser(ctx context.Context, p CreateUserParams) (*model.User, error) {
+	tx, err := r.db.Pg.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	var userID int
+	var createdAt time.Time
+	err = tx.QueryRow(ctx, `
+		INSERT INTO users (role_id, email, last_name, first_name, patronymic, phone)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, created_at
+	`, p.RoleID, p.Email, p.LastName, p.FirstName, p.Patronymic, p.Phone).Scan(&userID, &createdAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert user: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx,
+		`INSERT INTO passwords (password_id, password_hash) VALUES ($1, $2)`,
+		userID, p.PasswordHash,
+	); err != nil {
+		return nil, fmt.Errorf("failed to insert password: %w", err)
+	}
+
+	if p.RoleName == "student" {
+		if p.GroupID == nil {
+			return nil, fmt.Errorf("group_id is required for student role")
+		}
+		if _, err = tx.Exec(ctx,
+			`INSERT INTO students (student_id, group_id) VALUES ($1, $2)`,
+			userID, *p.GroupID,
+		); err != nil {
+			return nil, fmt.Errorf("failed to insert student: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit: %w", err)
+	}
+
+	return &model.User{
+		ID: userID, Email: p.Email, LastName: p.LastName, FirstName: p.FirstName,
+		Patronymic: p.Patronymic, Role: p.RoleName, IsActive: true, CreatedAt: createdAt,
+	}, nil
+}
+
+func (r *UserRepository) ListUsers(ctx context.Context) ([]*model.User, error) {
+	rows, err := r.db.Pg.Query(ctx, `
+		SELECT u.id, u.email, u.last_name, u.first_name, u.patronymic,
+		       COALESCE(u.avatar_url, ''), ro.name, u.is_active, u.created_at
+		FROM users u JOIN roles ro ON ro.id = u.role_id
+		ORDER BY u.created_at DESC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []*model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.Email, &u.LastName, &u.FirstName, &u.Patronymic,
+			&u.AvatarURL, &u.Role, &u.IsActive, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		users = append(users, &u)
+	}
+	return users, rows.Err()
+}
+
+func (r *UserRepository) UpdateUser(ctx context.Context, userID int, p model.UpdateUserRequest) error {
+	cmd, err := r.db.Pg.Exec(ctx, `
+		UPDATE users SET
+			last_name  = COALESCE($2, last_name),
+			first_name = COALESCE($3, first_name),
+			patronymic = COALESCE($4, patronymic),
+			phone      = COALESCE($5, phone),
+			is_active  = COALESCE($6, is_active)
+		WHERE id = $1
+	`, userID, p.LastName, p.FirstName, p.Patronymic, p.Phone, p.IsActive)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+	if cmd.RowsAffected() == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
+}

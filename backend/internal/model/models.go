@@ -84,3 +84,31 @@ type VerifyGuestResult struct {
 	Reason    string     `json:"reason"`
 	Guest     *GuestPass `json:"guest,omitempty"`
 }
+
+type CreateUserRequest struct {
+	Email      string `json:"email"`
+	LastName   string `json:"last_name"`
+	FirstName  string `json:"first_name"`
+	Patronymic string `json:"patronymic"`
+	Phone      string `json:"phone"`
+	Role       string `json:"role"`
+	GroupID    *int   `json:"group_id,omitempty"` // not null для студента
+	Password   string `json:"password"`
+}
+
+type UpdateUserRequest struct {
+	LastName   *string `json:"last_name"`
+	FirstName  *string `json:"first_name"`
+	Patronymic *string `json:"patronymic"`
+	Phone      *string `json:"phone"`
+	IsActive   *bool   `json:"is_active"`
+}
+
+type CreateGuestPassRequest struct {
+	LastName   string    `json:"last_name"`
+	FirstName  string    `json:"first_name"`
+	Patronymic string    `json:"patronymic"`
+	Purpose    string    `json:"purpose"`
+	ValidFrom  time.Time `json:"valid_from"`
+	ValidTo    time.Time `json:"valid_to"`
+}

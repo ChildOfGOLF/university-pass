@@ -137,3 +137,51 @@ func (r *GuestRepository) EnqueueAccessLog(ctx context.Context, event model.Acce
 
 	return r.db.Rdb.RPush(ctx, "logs:queue", b).Err()
 }
+
+func (r *GuestRepository) CreateGuestPass(ctx context.Context, g *model.GuestPass) (*model.GuestPass, error) {
+	err := r.db.Pg.QueryRow(ctx, `
+		INSERT INTO guest_passes (last_name, first_name, patronymic, purpose, valid_from, valid_to)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, is_used, is_entered, created_at
+	`, g.LastName, g.FirstName, g.Patronymic, g.Purpose, g.ValidFrom, g.ValidTo).
+		Scan(&g.ID, &g.IsUsed, &g.IsEntered, &g.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create guest pass: %w", err)
+	}
+	return g, nil
+}
+
+func (r *GuestRepository) ListGuestPasses(ctx context.Context) ([]*model.GuestPass, error) {
+	rows, err := r.db.Pg.Query(ctx, `
+		SELECT id, last_name, first_name, patronymic, COALESCE(purpose, ''),
+		       valid_from, valid_to, is_used, is_entered, created_at
+		FROM guest_passes ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list guest passes: %w", err)
+	}
+	defer rows.Close()
+
+	var result []*model.GuestPass
+	for rows.Next() {
+		var g model.GuestPass
+		if err := rows.Scan(&g.ID, &g.LastName, &g.FirstName, &g.Patronymic, &g.Purpose,
+			&g.ValidFrom, &g.ValidTo, &g.IsUsed, &g.IsEntered, &g.CreatedAt); err != nil {
+			return nil, err
+		}
+		result = append(result, &g)
+	}
+	return result, rows.Err()
+}
+
+// Если гость не внутри
+func (r *GuestRepository) RevokeGuestPass(ctx context.Context, id string) (bool, error) {
+	cmd, err := r.db.Pg.Exec(ctx, `
+		UPDATE guest_passes SET is_used = true
+		WHERE id = $1 AND is_used = false AND is_entered = false
+	`, id)
+	if err != nil {
+		return false, fmt.Errorf("failed to revoke guest pass: %w", err)
+	}
+	return cmd.RowsAffected() > 0, nil
+}
