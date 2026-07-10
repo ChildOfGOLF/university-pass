@@ -21,10 +21,20 @@ func NewAdminAuthHandler(authService *service.AuthService) *AdminAuthHandler {
 }
 
 type AdminLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" example:"admin@uni.com"`
+	Password string `json:"password" example:"password123"`
 }
 
+// AdminLogin godoc
+// @Summary Логин админа
+// @Tags admin-auth
+// @Accept json
+// @Produce json
+// @Param request body AdminLoginRequest true "Учетные данные администратора"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /admin/auth/login [post]
 func (h *AdminAuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req AdminLoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -56,6 +66,18 @@ func NewAdminUserHandler(userRepo *repository.UserRepository) *AdminUserHandler 
 	return &AdminUserHandler{userRepo: userRepo}
 }
 
+// CreateUser godoc
+// @Summary Создать пользователя
+// @Tags admin-users
+// @Accept json
+// @Produce json
+// @Security AdminBearer
+// @Param request body model.CreateUserRequest true "Данные пользователя"
+// @Success 201 {object} model.User
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /admin/users [post]
 func (h *AdminUserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req model.CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -93,6 +115,14 @@ func (h *AdminUserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, http.StatusCreated, user)
 }
 
+// ListUsers godoc
+// @Summary Список пользователей
+// @Tags admin-users
+// @Produce json
+// @Security AdminBearer
+// @Success 200 {array} model.User
+// @Failure 401 {object} ErrorResponse
+// @Router /admin/users [get]
 func (h *AdminUserHandler) List(w http.ResponseWriter, r *http.Request) {
 	users, err := h.userRepo.ListUsers(r.Context())
 	if err != nil {
@@ -102,6 +132,19 @@ func (h *AdminUserHandler) List(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, http.StatusOK, users)
 }
 
+// UpdateUser godoc
+// @Summary Обновить данные пользователя
+// @Tags admin-users
+// @Accept json
+// @Produce json
+// @Security AdminBearer
+// @Param id path int true "ID пользователя"
+// @Param request body model.UpdateUserRequest true "Поля для обновления"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /admin/users/{id} [patch]
 func (h *AdminUserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -127,6 +170,16 @@ func (h *AdminUserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, http.StatusOK, map[string]string{"status": "updated"})
 }
 
+// DeactivateUser godoc
+// @Summary Деактивировать пользователя
+// @Tags admin-users
+// @Produce json
+// @Security AdminBearer
+// @Param id path int true "ID пользователя"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /admin/users/{id} [delete]
 func (h *AdminUserHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -151,6 +204,18 @@ func NewAdminGuestHandler(guestRepo *repository.GuestRepository) *AdminGuestHand
 	return &AdminGuestHandler{guestRepo: guestRepo}
 }
 
+// CreateGuestPass godoc
+// @Summary Создать гостевой пропуск
+// @Tags admin-guests
+// @Accept json
+// @Produce json
+// @Security AdminBearer
+// @Param request body model.CreateGuestPassRequest true "Данные гостя"
+// @Success 201 {object} model.GuestPass
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /admin/guests [post]
 func (h *AdminGuestHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req model.CreateGuestPassRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -180,6 +245,14 @@ func (h *AdminGuestHandler) Create(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, http.StatusCreated, created)
 }
 
+// ListGuestPasses godoc
+// @Summary Список гостевых пропусков
+// @Tags admin-guests
+// @Produce json
+// @Security AdminBearer
+// @Success 200 {array} model.GuestPass
+// @Failure 401 {object} ErrorResponse
+// @Router /admin/guests [get]
 func (h *AdminGuestHandler) List(w http.ResponseWriter, r *http.Request) {
 	guests, err := h.guestRepo.ListGuestPasses(r.Context())
 	if err != nil {
@@ -189,6 +262,16 @@ func (h *AdminGuestHandler) List(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, http.StatusOK, guests)
 }
 
+// RevokeGuestPass godoc
+// @Summary Отозвать гостевой пропуск
+// @Tags admin-guests
+// @Produce json
+// @Security AdminBearer
+// @Param id path string true "UUID гостевого пропуска"
+// @Success 200 {object} map[string]string
+// @Failure 404 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /admin/guests/{id}/revoke [post]
 func (h *AdminGuestHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	ok, err := h.guestRepo.RevokeGuestPass(r.Context(), id)

@@ -18,9 +18,9 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	DeviceID string `json:"device_id"`
+	Email    string `json:"email" example:"student1@uni.com"`
+	Password string `json:"password" example:"password123"`
+	DeviceID string `json:"device_id" example:"device-123456"`
 }
 
 type LoginResponse struct {
@@ -31,6 +31,18 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
+// Login godoc
+// @Summary Логин пользователя
+// @Description Проверяет email и пароль, генерирует новый TOTP secret_key и привязывает его к device_id
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Данные для входа"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -74,10 +86,10 @@ func sendError(w http.ResponseWriter, status int, message string) {
 }
 
 type VerifyRequest struct {
-	DeviceID  string `json:"device_id,omitempty"`
-	OTP       string `json:"otp,omitempty"`
-	GuestID   string `json:"guest_id,omitempty"`
-	Direction string `json:"direction"`
+	DeviceID  string `json:"device_id,omitempty" example:"device-123456"`
+	OTP       string `json:"otp,omitempty" example:"123456"`
+	GuestID   string `json:"guest_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Direction string `json:"direction" enums:"enter,exit" example:"enter"`
 }
 
 type VerifyResponse struct {
@@ -87,6 +99,19 @@ type VerifyResponse struct {
 	Guest     *model.GuestPass `json:"guest,omitempty"`
 }
 
+// Verify godoc
+// @Summary Проверить пропуск при сканировании QR
+// @Description Одно из: device_id + otp для пользователя, либо guest_id для гостя
+// @Tags scan
+// @Accept json
+// @Produce json
+// @Security ScannerKey
+// @Param request body VerifyRequest true "Данные сканирования"
+// @Success 200 {object} VerifyResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /scan/verify [post]
 func (h *AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	var req VerifyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

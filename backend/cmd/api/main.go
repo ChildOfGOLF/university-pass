@@ -14,7 +14,24 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
+
+// @title University Pass API
+// @version 1.0
+// @description API системы
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey AdminBearer
+// @in header
+// @name Authorization
+// @description JWT из /admin/auth/login
+
+// @securityDefinitions.apikey ScannerKey
+// @in header
+// @name X-Scanner-Key
+// @description Ключ конкретной турникета, выдаётся админом
 
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -51,6 +68,8 @@ func main() {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
