@@ -6,9 +6,11 @@ import (
 	"encoding/base32"
 	"fmt"
 	"time"
+	"university-pass/internal/middleware"
 	"university-pass/internal/model"
 	"university-pass/internal/repository"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 
@@ -78,24 +80,28 @@ type VerifyUserResult struct {
 	User      *model.User `json:"user,omitempty"`
 }
 
-func (s *AuthService) VerifyUser(ctx context.Context, userID int, otpCode, scannerID, direction string, accessPointID int) (*VerifyUserResult, error) {
-	device, err := s.userRepo.GetDeviceByUserID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get device: %w", err)
-	}
-	if device == nil {
+func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scannerID, direction string, accessPointID int) (*VerifyUserResult, error) {
+	logDenied := func(userID *int, reason string) {
 		evt := model.AccessLogEvent{
 			Type:          "scan",
-			UserID:        &userID,
+			UserID:        userID,
 			AccessPointID: accessPointID,
 			Direction:     direction,
 			IsAllowed:     false,
-			Reason:        "device not found",
+			Reason:        reason,
 			ScannerID:     scannerID,
 			LoggedAt:      time.Now().UTC(),
 		}
 		_ = s.userRepo.EnqueueAccessLog(ctx, evt)
-		return &VerifyUserResult{IsAllowed: false, Reason: "device not found"}, nil
+	}
+
+	device, err := s.userRepo.GetDeviceByDeviceID(ctx, deviceID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get device: %w", err)
+	}
+	if device == nil {
+		logDenied(nil, "device not found")
+		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
 	}
 
 	ok, _ := totp.ValidateCustom(otpCode, device.SecretKey, time.Now().UTC(), totp.ValidateOpts{
@@ -105,48 +111,32 @@ func (s *AuthService) VerifyUser(ctx context.Context, userID int, otpCode, scann
 		Algorithm: otp.AlgorithmSHA1,
 	})
 	if !ok {
-		evt := model.AccessLogEvent{
-			Type:          "scan",
-			UserID:        &userID,
-			AccessPointID: accessPointID,
-			Direction:     direction,
-			IsAllowed:     false,
-			Reason:        "invalid otp",
-			ScannerID:     scannerID,
-			LoggedAt:      time.Now().UTC(),
-		}
-		_ = s.userRepo.EnqueueAccessLog(ctx, evt)
-		return &VerifyUserResult{IsAllowed: false, Reason: "invalid otp"}, nil
+		logDenied(&device.UserID, "invalid otp")
+		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
 	}
 
 	step := time.Now().UTC().Unix() / 30
-	updated, err := s.userRepo.UpdateLastUsedStepIfGreater(ctx, userID, step)
+	updated, err := s.userRepo.UpdateLastUsedStepIfGreater(ctx, device.UserID, step)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update last used step: %w", err)
 	}
 	if !updated {
-		evt := model.AccessLogEvent{
-			Type:          "scan",
-			UserID:        &userID,
-			AccessPointID: accessPointID,
-			Direction:     direction,
-			IsAllowed:     false,
-			Reason:        "replay detected",
-			ScannerID:     scannerID,
-			LoggedAt:      time.Now().UTC(),
-		}
-		_ = s.userRepo.EnqueueAccessLog(ctx, evt)
-		return &VerifyUserResult{IsAllowed: false, Reason: "replay detected"}, nil
+		logDenied(&device.UserID, "replay detected")
+		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
 	}
 
-	user, err := s.userRepo.GetByUserID(ctx, userID)
+	user, err := s.userRepo.GetByUserID(ctx, device.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
+	if user == nil || !user.IsActive {
+		logDenied(&device.UserID, "user not found or inactive")
+		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
+	}
 
-	evt := model.AccessLogEvent{
+	successEvt := model.AccessLogEvent{
 		Type:          "scan",
-		UserID:        &userID,
+		UserID:        &device.UserID,
 		AccessPointID: accessPointID,
 		Direction:     direction,
 		IsAllowed:     true,
@@ -154,7 +144,7 @@ func (s *AuthService) VerifyUser(ctx context.Context, userID int, otpCode, scann
 		ScannerID:     scannerID,
 		LoggedAt:      time.Now().UTC(),
 	}
-	_ = s.userRepo.EnqueueAccessLog(ctx, evt)
+	_ = s.userRepo.EnqueueAccessLog(ctx, successEvt)
 
 	return &VerifyUserResult{
 		IsAllowed: true,
@@ -347,4 +337,35 @@ func (s *AuthService) VerifyGuest(ctx context.Context, guestID, scannerID, direc
 		_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
 		return &VerifyGuestResult{IsAllowed: false, Reason: "invalid direction"}, nil
 	}
+}
+
+func (s *AuthService) AdminLogin(ctx context.Context, email, password string) (string, error) {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return "", fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil || user.Role != "admin" {
+		return "", fmt.Errorf("invalid credentials")
+	}
+	if !user.IsActive {
+		return "", fmt.Errorf("user is not active")
+	}
+
+	hash, err := s.userRepo.GetPasswordHashByUserID(ctx, user.ID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get password hash: %w", err)
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
+		return "", fmt.Errorf("invalid credentials")
+	}
+
+	claims := middleware.Claims{
+		UserID: user.ID,
+		Role:   user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(8 * time.Hour)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte("vBS0K4W5DRo2iTQI1JmnuqIouvnHaBbsyvXxqk1Ibhz")) // TODO: move to env
 }

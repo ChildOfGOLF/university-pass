@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -22,7 +23,17 @@ func InitDB(ctx context.Context) (*DB, error) {
 		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
 	}
 
-	if err := pgPool.Ping(ctx); err != nil {
+	for i := 0; i < 10; i++ {
+		err = pgPool.Ping(ctx)
+		if err == nil {
+			break
+		}
+
+		fmt.Println("waiting for postgres...")
+		time.Sleep(2 * time.Second)
+	}
+
+	if err != nil {
 		return nil, fmt.Errorf("failed to ping postgres: %w", err)
 	}
 

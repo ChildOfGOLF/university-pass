@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS access_points (
   building_id INT NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,
   scanner_id VARCHAR(100) UNIQUE NOT NULL,
   gate_number VARCHAR(10) NOT NULL,
+  api_key VARCHAR(64) UNIQUE,
   description TEXT
 );
 
@@ -78,7 +79,7 @@ CREATE TABLE IF NOT EXISTS access_logs (
   user_id INT REFERENCES users(id) ON DELETE SET NULL,
   guest_pass_id UUID REFERENCES guest_passes(id) ON DELETE SET NULL,
   access_point_id INT NOT NULL REFERENCES access_points(id),
-  direction VARCHAR(10) NOT NULL CHECK (direction IN ('enter', 'out')),
+  direction VARCHAR(10) NOT NULL CHECK (direction IN ('enter', 'exit')),
   is_allowed BOOLEAN NOT NULL,
   reason VARCHAR(255),
   logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -132,5 +133,27 @@ VALUES (
            FALSE,
            FALSE
        );
+
+INSERT INTO buildings (name, address)
+VALUES ('Main', 'Bolshaya Morskaya')
+ON CONFLICT (name) DO NOTHING;
+
+-- тестовая точка
+INSERT INTO access_points (building_id, scanner_id, gate_number, api_key, description)
+SELECT b.id, 'SCANNER_001', 'G1', 'test_api', 'Main entrance'
+FROM buildings b
+WHERE b.name = 'Main'
+  AND NOT EXISTS (SELECT 1 FROM access_points WHERE scanner_id = 'SCANNER_001');
+
+WITH new_admin AS (
+    INSERT INTO users (role_id, email, last_name, first_name, patronymic)
+        VALUES ((SELECT id FROM roles WHERE name='admin'), 'admin@uni.com', 'Admin', 'Admin', '')
+        RETURNING id
+)
+INSERT INTO passwords (password_id, password_hash)
+SELECT id, '$2a$10$N.VTcjd1Yw9dYqcPNpGuSO0RqASum/Jfp6ktBJIafn2VEMoYuT5ve'
+FROM new_admin;
+
+INSERT INTO groups (group_name) VALUES ('1443') ON CONFLICT DO NOTHING;
 
 COMMIT;
