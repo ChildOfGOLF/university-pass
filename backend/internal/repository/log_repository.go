@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"university-pass/internal/model"
 
 	"github.com/jackc/pgx/v5"
@@ -42,30 +43,32 @@ func (lr *LogRepository) SaveAccessLogBatch(ctx context.Context, logs []*model.A
 		return nil
 	}
 
-	var batch pgx.Batch
+	tx, err := lr.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx) // no-op если коммит прошел
 
+	var batch pgx.Batch
 	for _, log := range logs {
 		batch.Queue(
 			`INSERT INTO access_logs (user_id, guest_pass_id, access_point_id, direction, is_allowed, reason, logged_at)
 			 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-			log.UserID,
-			log.GuestPassID,
-			log.AccessPointID,
-			log.Direction,
-			log.IsAllowed,
-			log.Reason,
-			log.LoggedAt,
+			log.UserID, log.GuestPassID, log.AccessPointID,
+			log.Direction, log.IsAllowed, log.Reason, log.LoggedAt,
 		)
 	}
 
-	results := lr.db.SendBatch(ctx, &batch)
-	defer results.Close()
-
+	results := tx.SendBatch(ctx, &batch)
 	for range logs {
 		if _, err := results.Exec(); err != nil {
-			return err
+			results.Close()
+			return fmt.Errorf("batch insert failed: %w", err)
 		}
 	}
+	if err := results.Close(); err != nil {
+		return fmt.Errorf("failed to close batch: %w", err)
+	}
 
-	return results.Close()
+	return tx.Commit(ctx)
 }

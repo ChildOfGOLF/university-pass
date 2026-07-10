@@ -111,7 +111,57 @@ func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*mo
 	return &d, nil
 }
 
+// scan/verify
+func (r *UserRepository) GetDeviceByDeviceID(ctx context.Context, deviceID string) (*model.UserDevice, error) {
+	key := fmt.Sprintf("device:secret:%s", deviceID)
+
+	if r.db.Rdb != nil {
+		val, err := r.db.Rdb.Get(ctx, key).Result()
+		if err == nil {
+			var d model.UserDevice
+			if err := json.Unmarshal([]byte(val), &d); err == nil {
+				return &d, nil
+			}
+		} else if err != redis.Nil {
+			return nil, fmt.Errorf("failed to get device from redis: %w", err)
+		}
+	}
+
+	query := `
+		SELECT user_id, device_id, secret_key, last_used_step, created_at, updated_at
+		FROM user_devices
+		WHERE device_id = $1
+	`
+
+	var d model.UserDevice
+	err := r.db.Pg.QueryRow(ctx, query, deviceID).Scan(
+		&d.UserID,
+		&d.DeviceID,
+		&d.SecretKey,
+		&d.LastUsedStep,
+		&d.CreatedAt,
+		&d.UpdatedAt,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	if r.db.Rdb != nil {
+		if b, err := json.Marshal(d); err == nil {
+			_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
+		}
+	}
+
+	return &d, nil
+}
+
 func (r *UserRepository) UpsertDeviceSecret(ctx context.Context, userID int, deviceID string, secretKey string) error {
+	var oldDeviceID string
+	_ = r.db.Pg.QueryRow(ctx, `SELECT device_id FROM user_devices WHERE user_id = $1`, userID).Scan(&oldDeviceID)
+
 	query := `
 	INSERT INTO user_devices (user_id, device_id, secret_key, updated_at)
 	VALUES ($1, $2, $3, NOW())
@@ -125,16 +175,19 @@ func (r *UserRepository) UpsertDeviceSecret(ctx context.Context, userID int, dev
 	}
 
 	if r.db.Rdb != nil {
-		key := fmt.Sprintf("user:device:%d", userID)
-		var lastUsedStep *int64 = nil
+		if oldDeviceID != "" && oldDeviceID != deviceID {
+			_ = r.db.Rdb.Del(ctx, fmt.Sprintf("device:secret:%s", oldDeviceID)).Err()
+		}
+
 		d := model.UserDevice{
 			UserID:       userID,
 			DeviceID:     deviceID,
 			SecretKey:    secretKey,
-			LastUsedStep: lastUsedStep,
+			LastUsedStep: nil,
 		}
 		if b, err := json.Marshal(d); err == nil {
-			_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
+			_ = r.db.Rdb.Set(ctx, fmt.Sprintf("user:device:%d", userID), b, 24*time.Hour).Err()
+			_ = r.db.Rdb.Set(ctx, fmt.Sprintf("device:secret:%s", deviceID), b, 24*time.Hour).Err()
 		}
 	}
 

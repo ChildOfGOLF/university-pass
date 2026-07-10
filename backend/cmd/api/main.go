@@ -38,7 +38,7 @@ func main() {
 
 	accessRepo := repository.NewAccessPointRepository(db)
 
-	authHandler := handler.NewAuthHandler(authService, accessRepo)
+	authHandler := handler.NewAuthHandler(authService)
 	userAdminHandler := handler.NewAdminUserHandler(userRepo)
 	guestAdminHandler := handler.NewAdminGuestHandler(guestRepo)
 	adminAuthHandler := handler.NewAdminAuthHandler(authService)
@@ -79,8 +79,10 @@ func main() {
 		})
 	})
 	r.Post("/auth/login", authHandler.Login)
-	r.Post("/scan/verify-user", authHandler.VerifyUser)
-	r.Post("/scan/verify-guest", authHandler.VerifyGuest)
+	r.Group(func(r chi.Router) {
+		r.Use(mw.RequireScannerKey(accessRepo))
+		r.Post("/scan/verify", authHandler.Verify)
+	})
 	fmt.Println("running: 8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		fmt.Println(err)

@@ -4,18 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"university-pass/internal/middleware"
 	"university-pass/internal/model"
-	"university-pass/internal/repository"
 	"university-pass/internal/service"
 )
 
 type AuthHandler struct {
 	authService *service.AuthService
-	apRepo      *repository.AccessPointRepository
 }
 
-func NewAuthHandler(authService *service.AuthService, apRepo *repository.AccessPointRepository) *AuthHandler {
-	return &AuthHandler{authService: authService, apRepo: apRepo}
+func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+	return &AuthHandler{authService: authService}
 }
 
 type LoginRequest struct {
@@ -74,101 +73,68 @@ func sendError(w http.ResponseWriter, status int, message string) {
 	}
 }
 
-type VerifyUserRequest struct {
-	UserID    int    `json:"user_id"`
-	OTP       string `json:"otp"`
-	ScannerID string `json:"scanner_id"`
+type VerifyRequest struct {
+	DeviceID  string `json:"device_id,omitempty"`
+	OTP       string `json:"otp,omitempty"`
+	GuestID   string `json:"guest_id,omitempty"`
 	Direction string `json:"direction"`
 }
 
-type VerifyUserResponse struct {
-	IsAllowed bool        `json:"is_allowed"`
-	Reason    string      `json:"reason"`
-	User      *model.User `json:"user,omitempty"` // TODO: подумать над *model
-}
-
-type VerifyGuestRequest struct {
-	GuestID   string `json:"guest_id"`
-	ScannerID string `json:"scanner_id"`
-	Direction string `json:"direction"`
-}
-
-type VerifyGuestResponse struct {
+type VerifyResponse struct {
 	IsAllowed bool             `json:"is_allowed"`
 	Reason    string           `json:"reason"`
+	User      *model.User      `json:"user,omitempty"`
 	Guest     *model.GuestPass `json:"guest,omitempty"`
 }
 
-func (h *AuthHandler) VerifyUser(w http.ResponseWriter, r *http.Request) {
-	var req VerifyUserRequest
+func (h *AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
+	var req VerifyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		sendError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-
-	if req.UserID <= 0 || req.OTP == "" || req.ScannerID == "" || req.Direction == "" {
-		sendError(w, http.StatusBadRequest, "user_id, otp, scanner_id and direction are required")
+	if req.Direction == "" {
+		sendError(w, http.StatusBadRequest, "direction is required")
 		return
 	}
 
-	// TODO: определить accessPointID по scannerID; пока что 0 или искать в бд
-	ap, err := h.apRepo.GetByScannerID(r.Context(), req.ScannerID)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, "failed to lookup scanner")
+	isUserReq := req.DeviceID != "" && req.OTP != ""
+	isGuestReq := req.GuestID != ""
+
+	if isUserReq == isGuestReq {
+		sendError(w, http.StatusBadRequest, "provide either (device_id and otp) or guest_id, not both or neither")
 		return
 	}
+
+	ap := middleware.AccessPointFromContext(r.Context())
 	if ap == nil {
-		sendError(w, http.StatusBadRequest, "unknown scanner_id")
+		// не должно происходить если роут защищен scannerkey
+		sendError(w, http.StatusInternalServerError, "access point missing from context")
 		return
 	}
-	accessPointID := ap.ID
 
-	result, err := h.authService.VerifyUser(r.Context(), req.UserID, req.OTP, req.ScannerID, req.Direction, accessPointID)
+	if isGuestReq {
+		result, err := h.authService.VerifyGuest(r.Context(), req.GuestID, ap.ScannerID, req.Direction, ap.ID)
+		if err != nil {
+			sendError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		sendJSON(w, http.StatusOK, VerifyResponse{
+			IsAllowed: result.IsAllowed,
+			Reason:    result.Reason,
+			Guest:     result.Guest,
+		})
+		return
+	}
+
+	result, err := h.authService.VerifyUser(r.Context(), req.DeviceID, req.OTP, ap.ScannerID, req.Direction, ap.ID)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	sendJSON(w, http.StatusOK, VerifyUserResponse{
+	sendJSON(w, http.StatusOK, VerifyResponse{
 		IsAllowed: result.IsAllowed,
 		Reason:    result.Reason,
 		User:      result.User,
-	})
-}
-
-func (h *AuthHandler) VerifyGuest(w http.ResponseWriter, r *http.Request) {
-	var req VerifyGuestRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		sendError(w, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	if req.GuestID == "" || req.ScannerID == "" || req.Direction == "" {
-		sendError(w, http.StatusBadRequest, "guest_id, scanner_id and direction are required")
-		return
-	}
-
-	// TODO: определить accessPointID по scannerID; пока что 0 или искать в бд
-	ap, err := h.apRepo.GetByScannerID(r.Context(), req.ScannerID)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, "failed to lookup scanner")
-		return
-	}
-	if ap == nil {
-		sendError(w, http.StatusBadRequest, "unknown scanner_id")
-		return
-	}
-	accessPointID := ap.ID
-
-	result, err := h.authService.VerifyGuest(r.Context(), req.GuestID, req.ScannerID, req.Direction, accessPointID)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	sendJSON(w, http.StatusOK, VerifyGuestResponse{
-		IsAllowed: result.IsAllowed,
-		Reason:    result.Reason,
-		Guest:     result.Guest,
 	})
 }

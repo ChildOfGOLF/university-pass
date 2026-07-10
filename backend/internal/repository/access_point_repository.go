@@ -60,3 +60,16 @@ func (r *AccessPointRepository) GetOrCreateByScannerID(ctx context.Context, scan
 	}
 	return newID, nil
 }
+
+func (r *AccessPointRepository) GetByAPIKey(ctx context.Context, apiKey string) (*model.AccessPoint, error) {
+	query := `SELECT id, building_id, scanner_id, gate_number, description FROM access_points WHERE api_key = $1`
+	var ap model.AccessPoint
+	err := r.db.Pg.QueryRow(ctx, query, apiKey).Scan(&ap.ID, &ap.BuildingID, &ap.ScannerID, &ap.GateNumber, &ap.Description)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get access point by api_key: %w", err)
+	}
+	return &ap, nil
+}

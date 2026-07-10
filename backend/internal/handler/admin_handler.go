@@ -199,6 +199,7 @@ func (h *AdminGuestHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		sendError(w, http.StatusNotFound, "guest pass already used, entered or not found")
+		return
 	}
 	sendJSON(w, http.StatusOK, map[string]string{"status": "revoked"})
 }

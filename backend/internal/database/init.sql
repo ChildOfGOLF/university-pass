@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS access_points (
   building_id INT NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,
   scanner_id VARCHAR(100) UNIQUE NOT NULL,
   gate_number VARCHAR(10) NOT NULL,
+  api_key VARCHAR(64) UNIQUE,
   description TEXT
 );
 
@@ -134,12 +135,12 @@ VALUES (
        );
 
 INSERT INTO buildings (name, address)
-SELECT 'Main', 'Bolshaya Morskaya'
-WHERE NOT EXISTS (SELECT 1 FROM buildings WHERE name = 'Main Building');
+VALUES ('Main', 'Bolshaya Morskaya')
+ON CONFLICT (name) DO NOTHING;
 
 -- тестовая точка
-INSERT INTO access_points (building_id, scanner_id, gate_number, description)
-SELECT b.id, 'SCANNER_001', 'G1', 'Main entrance'
+INSERT INTO access_points (building_id, scanner_id, gate_number, api_key, description)
+SELECT b.id, 'SCANNER_001', 'G1', 'test_api', 'Main entrance'
 FROM buildings b
 WHERE b.name = 'Main'
   AND NOT EXISTS (SELECT 1 FROM access_points WHERE scanner_id = 'SCANNER_001');
