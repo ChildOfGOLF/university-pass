@@ -2,37 +2,18 @@
 
 ## Запуск
 
-Внутри ./backend 
+Внутри в корне
 
 ```
-docker compose up -d
+docker-compose up --build
 ```
 
-Стартует бд с одним пользователем и бэкенд на порту 8080
+Стартует бд с одним пользователем, гостем, админом и бэкенд на порту 8080
 
-http://localhost:8080/auth/login
+На http://localhost:8080/swagger/index.html доступна документация
 
-Принимает POST запрос с телом:
 
-```
-{
-    "email": "student1@uni.com",
-    "password": "password123",
-    "device_id": "12345-ababab-test"
-}
-```
-
-Пример ответа:
-
-```
-{
-    "secret_key": "HQZD35IMGBKSSESVBJZZM4MOFDEW5ONI"
-}
-```
-
-secret_key при каждом новом логине новый
-
-Остановить контейнеры:
+Остановить и удалить контейнеры:
 ```
 docker compose down -v
 ```
