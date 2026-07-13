@@ -1,0 +1,15 @@
+@import url('./fonts.css');
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    min-width: min-content;
+    font-family: "Geometria";
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    background-image: url('../icons/background1.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+}
