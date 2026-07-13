@@ -1,5 +1,5 @@
 //Обертка для всех эндпойнтов
-const BASE_URL = "https://localhost:8080";
+const BASE_URL = /* "https://localhost:8080" */ "/api";
 
 async function request(path, options = {}) {
     const res = await fetch(BASE_URL + path, {
@@ -18,4 +18,5 @@ async function request(path, options = {}) {
 
 export const apiMethods = {
     login: (data) => request('/auth/login', {method: "POST", body: JSON.stringify(data)}),
+    verify: (data) => request('/scan/verify', {method: "POST", body: JSON.stringify(data)})
 }

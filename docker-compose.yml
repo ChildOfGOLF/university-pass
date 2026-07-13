@@ -30,6 +30,11 @@ services:
   
   frontend:
     build: ./frontend
+    # develop:
+    #   watch:
+    #     - action: sync
+    #       path: ./public
+    #       target: /usr/share/nginx/html
     ports:
       - "80:80"
     depends_on:
