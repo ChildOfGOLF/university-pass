@@ -9,6 +9,7 @@ require (
 	github.com/pquerna/otp v1.5.0
 	github.com/redis/go-redis/v9 v9.21.0
 	github.com/swaggo/http-swagger v1.3.4
+	github.com/swaggo/swag v1.16.6
 	golang.org/x/crypto v0.53.0
 )
 
@@ -27,7 +28,6 @@ require (
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/rogpeppe/go-internal v1.15.0 // indirect
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe // indirect
-	github.com/swaggo/swag v1.16.6 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
