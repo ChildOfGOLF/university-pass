@@ -1,0 +1,317 @@
+.main-container {
+    padding-left: 30%;
+    padding-right: 30%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: 1fr 10fr 1fr;
+    align-items: center;
+    height: 100%;
+}
+
+/* СОДЕРЖИМОЕ КОНТЕЙНЕРА СО СКАНЕРОМ */
+
+.scanner-menu {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 3%;
+    width: 100%;
+    height: 100%;
+
+    /* min-width: 300px;
+    max-height: 800px; */
+
+    border-radius: 2vh; 
+    background-color: white;
+    box-shadow: 0.1cqw 0.3cqw 1.5cqw 0.5cqw rgba(0, 0, 0, 0.7);
+
+    display: grid;
+    grid-template-rows: 0.125fr 1fr 0.1fr;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 'header header'
+                        'QR info'
+                        'button button';
+    row-gap: 2%;
+    position: relative;
+}
+
+/* ПРИНЯТЬ - ОТКЛОНИТЬ */
+
+.accept-deny-holder {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    position: absolute;
+    z-index: 5;
+    height: 100%;
+    width: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    /* pointer-events: none; */
+}
+
+.accept-deny-message {
+    /* position: absolute;
+    z-index: 4; */
+    padding: 2%;
+    /* height: auto; */
+    width: 10cqw;
+    border: 0.1cqw solid #03102B;
+    border-radius: 1vh;
+    background-color: white;
+    box-shadow: 0 0 1cqw 0.1cqw rgba(0, 0, 0, 0.7);
+    display: grid;
+    grid-template-columns: 1fr 5fr 1fr;
+    grid-template-rows: 1fr min-content 0fr;
+    gap: 5%;
+    align-items: center;
+}
+
+.accept-deny-message.accept {
+    /* padding: 2%; */
+    height: 10cqw;
+}
+
+.accept-deny-message.accept > .reason {
+    display: none;
+}
+
+.accept-deny-message.deny {
+    padding-top: 5%;
+    padding-bottom: 5%;
+    height: auto;
+    grid-template-rows: 1fr min-content min-content;
+}
+
+.accept-deny-message > img {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    height: auto;
+}
+
+.accept-deny-text {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    text-align: center;
+    /* color: #6fcf97; */
+    /* color: #ff5959; */
+    font-size: 1cqw;
+    font-weight: 700;
+}
+
+.reason {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    text-align: center;
+    font-weight: 500;
+}
+
+.accept-deny-message.accept > .accept-deny-text {
+    /* color: #6fcf97;
+    text-shadow: 0 0.1cqw 1cqw rgba(111, 207, 151, 0.30); */
+    color: #009900;
+    text-shadow: 0 0.1cqw 1cqw rgba(0, 186, 0, .25);
+}
+
+.accept-deny-message.deny > .accept-deny-text {
+    /* color: #ff5959;
+    text-shadow: 0 0.1cqw 1cqw rgba(255, 107, 61, 0.35); */
+    color: #d60000;
+    text-shadow: 0 0.1cqw 1cqw rgba(255, 31, 31, .25);
+}
+
+/* ЗАГОЛОВОК */
+
+.menu-header {
+    grid-area: header;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3%;
+    align-items: center;
+}
+
+.suai {
+    grid-column: 1;
+    width: 5cqw;
+    height: 5cqw;
+}
+
+.menu-name {
+    grid-column: 2;
+    font-size: 2cqw;
+    font-weight: 700;
+    color: #03102B;
+}
+
+/* QR-КОД */
+
+.QR-code {
+    grid-area: QR;
+    display: grid;
+    grid-template-rows: 3fr 1fr;
+    gap: 2%;
+    /* align-items: center; */
+    max-height: 30cqw;
+}
+
+.camera-wrapper {
+    grid-row: 1;
+    border: 0.1cqw solid #03102B;
+    /* background-color: #03102B; */
+    background-image: url('../../icons/background1.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+    border-radius: 1vh;
+    height: 100%;
+    width: 100%;
+    max-height: 20cqw;
+    position: relative;
+    display: flex;
+    align-items: center;
+    /* align-items: end; */
+    justify-content: center;
+}
+
+.camera {
+    border-radius: 1vh;
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+    
+}
+
+.restart-button {
+    position: absolute;
+    z-index: 3;
+    /* padding: 10%; */
+    /* width: 21.45%;
+    height: 20%; */
+    width: 3cqw;
+    height: 3cqw;
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+    scale: 1;
+    rotate: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 1cqw 0.1cqw rgba(0, 0, 0, 0.7);
+    /* bottom: 50%;
+    transform: translateY(50%); */
+    /* transition: transform 0.7s ease; */
+    transition: rotate 0.7s ease, scale 0.3s ease;
+}
+
+.restart-button:hover {
+    /* transform: rotate(-360deg); */
+    rotate: -360deg;
+    scale: 1.07;
+}
+
+.restart-button:active {
+    scale: 1;
+}
+
+.restart-button > img {
+    width: 80%;
+    height: 80%;
+    padding-bottom: 5%;
+    /* filter: drop-shadow(0 0 10px 10px rgb(0, 0, 0)); */
+}
+
+.error-text {
+    padding-bottom: 10%;
+    /* color: rgb(255, 0, 0);
+    text-shadow: 0 0.1cqw 1cqw rgba(255, 107, 61, 0.35); */
+    color: white;
+    font-size: 1cqw;
+    font-weight: 100;
+    position: absolute;
+    z-index: 2;
+    top: 100%;
+    transform: translateY(-100%);
+}
+
+/* ЗАГРУЗКА ФАЙЛОВ */
+
+.upload-files {
+    grid-row: 2;
+    position: relative;
+    border: 0.1cqw solid #03102B;
+    border-radius: 1vh;
+    background-color: #efefef;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 0.25fr 1fr;
+    align-items: center;
+    /* cursor: pointer; */
+    transition: background-color 0.5s ease, transform 0.2s ease;
+}
+
+.file-input {
+    position: absolute;
+    opacity: 0;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+.upload-files > img {
+    grid-column: 2;
+    height: auto;
+    width: 100%;
+}
+
+.upload-files:hover {
+    background-color: #d6d4d4;
+    transform: scale(1.01);
+}
+
+.upload-files:active {
+    transform: scale(0.99);
+}
+
+/* ИНФОРМАЦИЯ О ПОСЕТИТЕЛЯХ */
+
+.info {
+    grid-area: info;
+    padding-left: 5%;
+    font-size: 1cqw;
+    font-weight: 500;
+}
+
+.table-info {
+    width: 100%;
+}
+
+/* КНОПКА ВОЗВРАТА */
+
+.button {
+    background: linear-gradient(95deg, #03102B, #3B046B);
+    box-shadow: 0.1cqw 0.3cqw 1cqw 0.1cqw rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.button:hover {
+    transform: scale(1.01);
+}
+
+.button:active {
+    transform: scale(0.99);
+}
+
+.cancel-button {
+    grid-area: button;
+    border-radius: 1vh;
+    font-size: 1.5cqw;
+    font-weight: 700;
+}
