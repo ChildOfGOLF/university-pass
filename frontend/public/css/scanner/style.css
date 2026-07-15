@@ -288,6 +288,10 @@
     width: 100%;
 }
 
+.table-info > td {
+    overflow-wrap: break-word;
+}
+
 /* КНОПКА ВОЗВРАТА */
 
 .button {
