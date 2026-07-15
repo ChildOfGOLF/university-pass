@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(16),
   avatar_url TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_inside BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS groups (
@@ -79,7 +80,7 @@ CREATE TABLE IF NOT EXISTS access_logs (
   user_id INT REFERENCES users(id) ON DELETE SET NULL,
   guest_pass_id UUID REFERENCES guest_passes(id) ON DELETE SET NULL,
   access_point_id INT NOT NULL REFERENCES access_points(id),
-  direction VARCHAR(10) NOT NULL CHECK (direction IN ('enter', 'exit')),
+  direction VARCHAR(10) NOT NULL CHECK (direction IN ('enter', 'exit', 'unknown')),
   is_allowed BOOLEAN NOT NULL,
   reason VARCHAR(255),
   logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

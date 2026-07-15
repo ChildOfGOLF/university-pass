@@ -76,12 +76,13 @@ func generateTOTPSecret() (string, error) {
 
 type VerifyUserResult struct {
 	IsAllowed bool        `json:"is_allowed"`
+	Direction string      `json:"direction,omitempty"`
 	Reason    string      `json:"reason"`
 	User      *model.User `json:"user,omitempty"`
 }
 
-func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scannerID, direction string, accessPointID int) (*VerifyUserResult, error) {
-	logDenied := func(userID *int, reason string) {
+func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scannerID string, accessPointID int) (*VerifyUserResult, error) {
+	logDenied := func(userID *int, direction, reason string) {
 		evt := model.AccessLogEvent{
 			Type:          "scan",
 			UserID:        userID,
@@ -100,7 +101,7 @@ func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scanner
 		return nil, fmt.Errorf("failed to get device: %w", err)
 	}
 	if device == nil {
-		logDenied(nil, "device not found")
+		logDenied(nil, "unknown", "device not found")
 		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
 	}
 
@@ -111,7 +112,7 @@ func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scanner
 		Algorithm: otp.AlgorithmSHA1,
 	})
 	if !ok {
-		logDenied(&device.UserID, "invalid otp")
+		logDenied(&device.UserID, "unknown", "invalid otp")
 		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
 	}
 
@@ -121,7 +122,7 @@ func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scanner
 		return nil, fmt.Errorf("failed to update last used step: %w", err)
 	}
 	if !updated {
-		logDenied(&device.UserID, "replay detected")
+		logDenied(&device.UserID, "unknown", "replay detected")
 		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
 	}
 
@@ -130,8 +131,17 @@ func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scanner
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil || !user.IsActive {
-		logDenied(&device.UserID, "user not found or inactive")
+		logDenied(&device.UserID, "unknown", "user not found or inactive")
 		return &VerifyUserResult{IsAllowed: false, Reason: "access denied"}, nil
+	}
+
+	isInside, err := s.userRepo.ToggleInside(ctx, device.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to toggle inside state: %w", err)
+	}
+	direction := "exit"
+	if isInside {
+		direction = "enter"
 	}
 
 	successEvt := model.AccessLogEvent{
@@ -140,7 +150,6 @@ func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scanner
 		AccessPointID: accessPointID,
 		Direction:     direction,
 		IsAllowed:     true,
-		Reason:        "",
 		ScannerID:     scannerID,
 		LoggedAt:      time.Now().UTC(),
 	}
@@ -148,195 +157,88 @@ func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scanner
 
 	return &VerifyUserResult{
 		IsAllowed: true,
-		Reason:    "",
+		Direction: direction,
 		User:      user,
 	}, nil
 }
 
 type VerifyGuestResult struct {
+	Direction string           `json:"direction,omitempty"`
 	IsAllowed bool             `json:"is_allowed"`
 	Reason    string           `json:"reason"`
 	Guest     *model.GuestPass `json:"guest,omitempty"`
 }
 
-func (s *AuthService) VerifyGuest(ctx context.Context, guestID, scannerID, direction string, accessPointID int) (*VerifyGuestResult, error) {
+func (s *AuthService) logGuestEvent(ctx context.Context, guestID, scannerID string, accessPointID int, direction string, allowed bool, reason string) {
+	evt := model.AccessLogEvent{
+		Type:          "scan",
+		GuestPassID:   &guestID,
+		AccessPointID: accessPointID,
+		Direction:     direction,
+		IsAllowed:     allowed,
+		Reason:        reason,
+		ScannerID:     scannerID,
+		LoggedAt:      time.Now().UTC(),
+	}
+	_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
+}
+
+func (s *AuthService) VerifyGuest(ctx context.Context, guestID, scannerID string, accessPointID int) (*VerifyGuestResult, error) {
 	guest, err := s.guestRepo.GetGuestPassByID(ctx, guestID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get guest pass: %w", err)
 	}
 	if guest == nil {
-		evt := model.AccessLogEvent{
-			Type:          "scan",
-			GuestPassID:   &guestID,
-			AccessPointID: accessPointID,
-			Direction:     direction,
-			IsAllowed:     false,
-			Reason:        "guest pass not found",
-			ScannerID:     scannerID,
-			LoggedAt:      time.Now().UTC(),
-		}
-		_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
+		s.logGuestEvent(ctx, guestID, scannerID, accessPointID, "unknown", false, "guest pass not found")
 		return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass not found"}, nil
 	}
 
 	now := time.Now().UTC()
+	direction := "enter"
+	if guest.IsEntered {
+		direction = "exit"
+	}
 
-	switch direction {
-	case "enter":
-		if now.Before(guest.ValidFrom) {
-			evt := model.AccessLogEvent{
-				Type:          "scan",
-				GuestPassID:   &guestID,
-				AccessPointID: accessPointID,
-				Direction:     direction,
-				IsAllowed:     false,
-				Reason:        "guest pass not active yet",
-				ScannerID:     scannerID,
-				LoggedAt:      now,
-			}
-			_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-			return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass not active yet"}, nil
-		}
-
-		if now.After(guest.ValidTo) {
-			evt := model.AccessLogEvent{
-				Type:          "scan",
-				GuestPassID:   &guestID,
-				AccessPointID: accessPointID,
-				Direction:     direction,
-				IsAllowed:     false,
-				Reason:        "guest pass expired",
-				ScannerID:     scannerID,
-				LoggedAt:      now,
-			}
-			_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-			return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass expired"}, nil
-		}
-
-		if guest.IsUsed || guest.IsEntered {
-			evt := model.AccessLogEvent{
-				Type:          "scan",
-				GuestPassID:   &guestID,
-				AccessPointID: accessPointID,
-				Direction:     direction,
-				IsAllowed:     false,
-				Reason:        "guest pass already used",
-				ScannerID:     scannerID,
-				LoggedAt:      now,
-			}
-			_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-			return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass already used"}, nil
-		}
-
-		updated, err := s.guestRepo.MarkGuestPassEnteredIfValid(ctx, guestID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to mark guest pass entered: %w", err)
-		}
-		if !updated {
-			evt := model.AccessLogEvent{
-				Type:          "scan",
-				GuestPassID:   &guestID,
-				AccessPointID: accessPointID,
-				Direction:     direction,
-				IsAllowed:     false,
-				Reason:        "guest pass already used or invalid",
-				ScannerID:     scannerID,
-				LoggedAt:      now,
-			}
-			_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-			return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass already used or invalid"}, nil
-		}
-
-		evt := model.AccessLogEvent{
-			Type:          "scan",
-			GuestPassID:   &guestID,
-			AccessPointID: accessPointID,
-			Direction:     direction,
-			IsAllowed:     true,
-			Reason:        "",
-			ScannerID:     scannerID,
-			LoggedAt:      now,
-		}
-		_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-
-		guest.IsUsed = true
-		guest.IsEntered = true
-
-		return &VerifyGuestResult{
-			IsAllowed: true,
-			Reason:    "",
-			Guest:     guest,
-		}, nil
-
-	case "exit":
-		if !guest.IsEntered {
-			evt := model.AccessLogEvent{
-				Type:          "scan",
-				GuestPassID:   &guestID,
-				AccessPointID: accessPointID,
-				Direction:     direction,
-				IsAllowed:     false,
-				Reason:        "guest is not inside",
-				ScannerID:     scannerID,
-				LoggedAt:      now,
-			}
-			_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-			return &VerifyGuestResult{IsAllowed: false, Reason: "guest is not inside"}, nil
-		}
-
+	if direction == "exit" {
 		updated, err := s.guestRepo.MarkGuestPassExited(ctx, guestID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to mark guest pass exited: %w", err)
 		}
 		if !updated {
-			evt := model.AccessLogEvent{
-				Type:          "scan",
-				GuestPassID:   &guestID,
-				AccessPointID: accessPointID,
-				Direction:     direction,
-				IsAllowed:     false,
-				Reason:        "guest exit not allowed",
-				ScannerID:     scannerID,
-				LoggedAt:      now,
-			}
-			_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
+			s.logGuestEvent(ctx, guestID, scannerID, accessPointID, direction, false, "guest exit not allowed")
 			return &VerifyGuestResult{IsAllowed: false, Reason: "guest exit not allowed"}, nil
 		}
-
-		evt := model.AccessLogEvent{
-			Type:          "scan",
-			GuestPassID:   &guestID,
-			AccessPointID: accessPointID,
-			Direction:     direction,
-			IsAllowed:     true,
-			Reason:        "",
-			ScannerID:     scannerID,
-			LoggedAt:      now,
-		}
-		_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-
+		s.logGuestEvent(ctx, guestID, scannerID, accessPointID, direction, true, "")
 		guest.IsEntered = false
-
-		return &VerifyGuestResult{
-			IsAllowed: true,
-			Reason:    "",
-			Guest:     guest,
-		}, nil
-
-	default:
-		evt := model.AccessLogEvent{
-			Type:          "scan",
-			GuestPassID:   &guestID,
-			AccessPointID: accessPointID,
-			Direction:     direction,
-			IsAllowed:     false,
-			Reason:        "invalid direction",
-			ScannerID:     scannerID,
-			LoggedAt:      now,
-		}
-		_ = s.guestRepo.EnqueueAccessLog(ctx, evt)
-		return &VerifyGuestResult{IsAllowed: false, Reason: "invalid direction"}, nil
+		return &VerifyGuestResult{IsAllowed: true, Direction: direction, Guest: guest}, nil
 	}
+
+	if now.Before(guest.ValidFrom) {
+		s.logGuestEvent(ctx, guestID, scannerID, accessPointID, direction, false, "guest pass not active yet")
+		return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass not active yet"}, nil
+	}
+	if now.After(guest.ValidTo) {
+		s.logGuestEvent(ctx, guestID, scannerID, accessPointID, direction, false, "guest pass expired")
+		return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass expired"}, nil
+	}
+	if guest.IsUsed {
+		s.logGuestEvent(ctx, guestID, scannerID, accessPointID, direction, false, "guest pass already used")
+		return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass already used"}, nil
+	}
+
+	updated, err := s.guestRepo.MarkGuestPassEnteredIfValid(ctx, guestID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to mark guest pass entered: %w", err)
+	}
+	if !updated {
+		s.logGuestEvent(ctx, guestID, scannerID, accessPointID, direction, false, "guest pass already used or invalid")
+		return &VerifyGuestResult{IsAllowed: false, Reason: "guest pass already used or invalid"}, nil
+	}
+
+	s.logGuestEvent(ctx, guestID, scannerID, accessPointID, direction, true, "")
+	guest.IsUsed = true
+	guest.IsEntered = true
+	return &VerifyGuestResult{IsAllowed: true, Direction: direction, Guest: guest}, nil
 }
 
 func (s *AuthService) AdminLogin(ctx context.Context, email, password string) (string, error) {

@@ -86,14 +86,14 @@ func sendError(w http.ResponseWriter, status int, message string) {
 }
 
 type VerifyRequest struct {
-	DeviceID  string `json:"device_id,omitempty" example:"device-123456"`
-	OTP       string `json:"otp,omitempty" example:"123456"`
-	GuestID   string `json:"guest_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Direction string `json:"direction" enums:"enter,exit" example:"enter"`
+	DeviceID string `json:"device_id,omitempty" example:"device-123456"`
+	OTP      string `json:"otp,omitempty" example:"123456"`
+	GuestID  string `json:"guest_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
 }
 
 type VerifyResponse struct {
 	IsAllowed bool             `json:"is_allowed"`
+	Direction string           `json:"direction,omitempty" enums:"enter,exit" example:"enter"`
 	Reason    string           `json:"reason"`
 	User      *model.User      `json:"user,omitempty"`
 	Guest     *model.GuestPass `json:"guest,omitempty"`
@@ -118,10 +118,6 @@ func (h *AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		sendError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Direction == "" {
-		sendError(w, http.StatusBadRequest, "direction is required")
-		return
-	}
 
 	isUserReq := req.DeviceID != "" && req.OTP != ""
 	isGuestReq := req.GuestID != ""
@@ -133,32 +129,33 @@ func (h *AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 
 	ap := middleware.AccessPointFromContext(r.Context())
 	if ap == nil {
-		// не должно происходить если роут защищен scannerkey
 		sendError(w, http.StatusInternalServerError, "access point missing from context")
 		return
 	}
 
 	if isGuestReq {
-		result, err := h.authService.VerifyGuest(r.Context(), req.GuestID, ap.ScannerID, req.Direction, ap.ID)
+		result, err := h.authService.VerifyGuest(r.Context(), req.GuestID, ap.ScannerID, ap.ID)
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		sendJSON(w, http.StatusOK, VerifyResponse{
 			IsAllowed: result.IsAllowed,
+			Direction: result.Direction,
 			Reason:    result.Reason,
 			Guest:     result.Guest,
 		})
 		return
 	}
 
-	result, err := h.authService.VerifyUser(r.Context(), req.DeviceID, req.OTP, ap.ScannerID, req.Direction, ap.ID)
+	result, err := h.authService.VerifyUser(r.Context(), req.DeviceID, req.OTP, ap.ScannerID, ap.ID)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	sendJSON(w, http.StatusOK, VerifyResponse{
 		IsAllowed: result.IsAllowed,
+		Direction: result.Direction,
 		Reason:    result.Reason,
 		User:      result.User,
 	})
