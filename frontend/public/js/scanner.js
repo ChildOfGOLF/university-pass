@@ -104,9 +104,10 @@ function showAcceptDenyWindow(status) {
 function fillTable(visitorInfo) {
     showAcceptDenyWindow(true);
 
+    const person = visitorInfo.user ?? visitorInfo.guest;
     tableInfo.querySelectorAll('tr')
         .forEach(tr => {
-            const info = visitorInfo.user[tr.dataset.attribute] ?? "-";
+            const info = person?.[tr.dataset.attribute] ?? "-";
             tr.querySelector('td:last-child').textContent = info;
         });
 }
@@ -125,7 +126,7 @@ async function setResult(result) {
         // console.log(data);
 
         const res = await apiMethods.verify(data);
-        // console.log(res);
+        console.log(res);
 
         if (res.is_allowed) {
             showAcceptDenyWindow(true);
@@ -138,7 +139,7 @@ async function setResult(result) {
     }
     catch (err) {
         if (err.name === "InvalidQr") {
-            reason.textContent = err;
+            reason.textContent = err.message;
             showAcceptDenyWindow(false);
 
             return;
