@@ -1,0 +1,252 @@
+html,
+body {
+    overflow: hidden;
+}
+
+.big-text {
+    font-family: var(--heading-font-family);
+    font-size: 24px;
+    line-height: 100%;
+}
+
+.normal-text {
+    font-family: var(--main-font-family);
+    font-size: 16px;
+}
+
+.page {
+    display: flex;
+    justify-content: center;
+    min-inline-size: 393px;
+    min-block-size: 100dvb;
+    background-color: var(--background-color);
+    background-image: url('./images/background-gradient.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.login-form {
+    position: relative;
+    max-block-size: 505px;
+    background-color: white;
+    padding: 23px 20px;
+    margin: auto 50px;
+    border-radius: 40px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 6px 5px 30px 0 rgb(0 0 0);
+}
+
+.form-heading {
+    color: var(--accent-color);
+    display: grid;
+    grid-template-columns: 63px 1fr;
+    margin-bottom: 44px;
+    gap: 25px;
+    align-items: center;
+}
+
+.form-input {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.form-label {
+    margin-left: 24px;
+    margin-bottom: 2px;
+}
+
+input[type="email"] {
+    margin-bottom: 45px;
+}
+
+input[type="password"],
+input[type="text"] {
+    margin-bottom: 16px;
+}
+
+input[type="password"],
+input[type="email"],
+input[type="text"] {
+    appearance: none;
+    border: none;
+    outline: 1px solid var(--accent-color);
+    border-radius: 50px;
+    min-inline-size: 258px;
+    min-block-size: 31px;
+    padding: 14px 24px;
+    text-overflow: ellipsis;
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+
+input[type="password"]::-webkit-textfield-decoration-container {
+    display: none;
+}
+
+.button-show {
+    all: unset;
+    position: absolute;
+    right: 24px;
+    top: 56%;
+    transform: translateY(-50%);
+}
+
+.password-ellipse,
+.password-circle {
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.password-line {
+    opacity: 1;
+    transition: opacity 0.25s ease;
+}
+
+.button-show:hover .password-line {
+    stroke-width: 1.5px;
+}
+
+.button-show:hover .password-ellipse {
+    opacity: 1;
+    transform: scaleY(1);
+}
+
+.button-show:hover .password-line {
+    opacity: 0;
+}
+
+.button-show--active .password-circle {
+    opacity: 1;
+}
+
+.button-show--active .password-line {
+    opacity: 0;
+}
+
+.button-show--active:hover .password-ellipse {
+    opacity: 0;
+}
+
+.button-show:active {
+    transform: translateY(-50%) scale(0.9);
+}
+
+
+.button-show--active:hover .password-circle {
+    fill: var(--accent-color);
+}
+
+
+.form-checkbox {
+    margin-bottom: 84px;
+}
+
+input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.form-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.form-checkbox span {
+    position: relative;
+    padding-left: 29px;
+}
+
+.form-checkbox span::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12px;
+    transform: translateY(-50%);
+    width: 23px;
+    height: 23px;
+    border: 1px solid var(--accent-color);
+    border-radius: 50%;
+    background-color: white;
+    box-sizing: border-box;
+    transition: background-color ease 0.3s, transform ease 0.3s;
+}
+
+input[type="checkbox"]:checked~span::before {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+input[type="checkbox"]~span::after {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 17px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-color);
+    opacity: 0;
+    transition: opacity ease 0.1s;
+    background-color: var(--accent-color);
+}
+
+input[type="checkbox"]:hover~span::after {
+    opacity: 1;
+}
+
+input[type="checkbox"]:checked~span::after {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    width: 5px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: translateY(-50%) rotate(45deg);
+    opacity: 1;
+}
+
+.submit-button {
+    appearance: none;
+    background-color: none;
+    color: white;
+    background-image: linear-gradient(-45deg, #03102B 0%, #3B046B 100%);
+    border-radius: 50px;
+    padding: 9px 24px 16px 24px;
+    border: none;
+    box-shadow: 3px 4px 10px 0 rgb(0 0 0/0.4);
+    transition: transform 0.2s ease;
+}
+
+.submit-button:hover {
+    transform: scale(0.98);
+}
+
+.submit-button:active {
+    transform: scale(1);
+}
+
+.error-message {
+    color: #7B150C;
+    position: absolute;
+    top: 400px;
+}
+
+@media (width > 465px) {
+    .form-heading {
+        margin-right: 150px;
+    }
+}

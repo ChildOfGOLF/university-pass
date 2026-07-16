@@ -1,5 +1,3 @@
-<!-- CHANGE PATHS -->
-
 <!doctype html>
 <html>
   <head>
@@ -7,14 +5,36 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>СУАЙ КУАР</title>
-    <link rel="stylesheet" href="./css copy/fonts.css" />
-    <link rel="stylesheet" href="./css copy/global.css" />
-    <link rel="stylesheet" href="./css copy/variables.css" />
-    <link rel="stylesheet" href="./css copy/style.css" />
-    <link rel="stylesheet" href="./css copy/animations.css" />
+    <link rel="stylesheet" href="../css/fonts.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/animations.css" />
     <link rel="icon" href="" size="any" />
     <link rel="icon" href="" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="" />
   </head>
-  <body class="page"></body>
+  <body class="page">
+    <form id="admin-login-form" class="login-form">
+      <div class="form-input">
+        <label for="admin-email" class="form-label normal-text">почта</label>
+        <input type="email" class="email" id="admin-email" />
+      </div>
+      <div class="form-input">
+        <label for="admin-password" class="form-label normal-text"
+          >пароль</label
+        >
+        <input type="email" class="password" id="admin-password" />
+      </div>
+      <p class="error-message" id="admin-error"></p>
+      <button
+        type="submit"
+        class="submit-button big-text"
+        id="admin-submit-button"
+      >
+        войти
+      </button>
+    </form>
+    <script type="module" src="./js/admin.js"></script>
+  </body>
 </html>
