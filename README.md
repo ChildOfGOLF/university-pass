@@ -12,6 +12,10 @@ docker-compose up --build
 
 На http://localhost:8080/swagger/index.html доступна документация
 
+```
+http/localhost #страница с авторизацией
+http/localhost/scanner #сканер
+```
 
 Остановить и удалить контейнеры:
 ```
