@@ -14,7 +14,7 @@ docker-compose up --build
 
 Страница с авторизацией http://localhost
 
-Сканер http/localhost://scanner
+Сканер http://localhost/scanner
 
 Остановить и удалить контейнеры:
 ```
