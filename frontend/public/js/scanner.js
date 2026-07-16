@@ -28,7 +28,6 @@ function parseQrData(data) {
 
     const result = {
         device_id: "",
-        direction: "enter", /* ! */
         guest_id: "",
         otp: ""
     };
@@ -105,7 +104,7 @@ function fillTable(visitorInfo) {
     showAcceptDenyWindow(true);
 
     const person = visitorInfo.user ?? visitorInfo.guest;
-    tableInfo.querySelectorAll('tr')
+    tableInfo.querySelectorAll('tr[data-attribute]')
         .forEach(tr => {
             const info = person?.[tr.dataset.attribute] ?? "-";
             tr.querySelector('td:last-child').textContent = info;
@@ -206,15 +205,3 @@ fileInput.addEventListener('change', async () => {
 });
 
 cancelButton.addEventListener('click', () => { scanner.stop(); restartButton.style.display = 'flex'; });
-
-/* window.addEventListener('load', async () => {
-
-    const res = await apiMethods.verify({
-        device_id: "",
-        direction: "enter",
-        guest_id: "550e8400-e29b-41d4-a716-446655440000",
-        otp: ""
-    });
-
-    console.log(res);
-}); */

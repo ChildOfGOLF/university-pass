@@ -349,3 +349,20 @@ func (r *UserRepository) UpdateUser(ctx context.Context, userID int, p model.Upd
 	}
 	return nil
 }
+
+func (r *UserRepository) ToggleInside(ctx context.Context, userID int) (bool, error) {
+	var isInside bool
+	err := r.db.Pg.QueryRow(ctx, `
+		UPDATE users
+		SET is_inside = NOT is_inside
+		WHERE id = $1
+		RETURNING is_inside
+	`, userID).Scan(&isInside)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, fmt.Errorf("user not found")
+		}
+		return false, fmt.Errorf("failed to toggle inside state: %w", err)
+	}
+	return isInside, nil
+}
