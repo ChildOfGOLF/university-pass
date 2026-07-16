@@ -1,0 +1,113 @@
+/* РАЗДЕЛЕНИЕ СТРАНИЦЫ НА ЧАСТИ */
+
+.page-layout {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: 1fr 10fr 1fr;
+}
+
+/* ГЛАВНЫЙ КОНТЕЙНЕР */
+
+.main-container {
+    grid-column: 2 / span 10;
+    grid-row: 2;
+    padding: 1%;
+    background-color: white;
+    border-radius: 1vh;
+    box-shadow: 0.1cqw 0.3cqw 1.5cqw 0.5cqw rgba(0, 0, 0, 0.7);
+    display: grid;
+    grid-template-columns: 7fr 1fr;
+    grid-template-rows: 0.125fr 0.25fr 1fr;
+    grid-template-areas: 'header header'
+                         'filters qrButton'
+                         'logs logs';
+    row-gap: 2%;
+}
+
+/* ЗАГОЛОВОК */
+
+.header-container {
+    grid-area: header;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 3%;
+    align-items: center;
+}
+
+.header-container > img {
+    grid-column: 1;
+    width: 3.5cqw;
+    height: 3.5cqw;
+}
+
+.header-name {
+    grid-column: 2;
+    font-size: 2cqw;
+    font-weight: 700;
+    color: #03102B;
+}
+
+/* !!! ФИЛЬТРЫ !!! */
+
+.filter-container {
+    grid-area: filters;
+    border: 0.1cqw solid black;
+    background-color: grey;
+    color: white;
+    font-size: 1cqw;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+
+/* ЛОГИ */
+
+.logs-container {
+    grid-area: logs;
+    display: grid;
+    grid-template-rows: min-content 1fr;
+    gap: 1%;
+}
+
+/* НАДПИСЬ */
+
+.logs-container-inscription {
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    gap: 1%;
+    align-items: center;
+}
+
+.logs-container-text {
+    grid-column: 1;
+    text-align: center;
+    color: #03102B;
+    font-weight: 400;
+    font-size: 1cqw;
+    white-space: nowrap;
+}
+
+.divider {
+    grid-column: 2;
+    width: 100%;
+    border: none;
+    border-top: 0.08cqw solid #03102B;
+    margin: 0;
+    opacity: 0.75;
+}
+
+/* !!! ИНФОРМАЦИЯ О ЛОГАХ В ВИДЕ UNORDERED LIST (UL) !!! */
+
+.logs-info {
+    grid-row: 2;
+    width: 100%;
+    height: 100%;
+    border: 0.1cqw solid black;
+    background-color: orange;
+    color: black;
+    font-size: 1cqw;
+    text-align: center;
+}

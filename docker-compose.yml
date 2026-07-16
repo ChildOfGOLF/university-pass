@@ -27,6 +27,18 @@ services:
     depends_on:
       - postgres
       - redis
+  
+  frontend:
+    build: ./frontend
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/public
+          target: /usr/share/nginx/html
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:

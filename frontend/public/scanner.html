@@ -1,0 +1,109 @@
+<!-- <!doctype html>
+<html>
+  <head>
+    <meta charset="UTF8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>СУАЙ КУАР</title>
+    <link rel="stylesheet" href="./css copy/fonts.css" />
+    <link rel="stylesheet" href="./css copy/global.css" />
+    <link rel="stylesheet" href="./css copy/variables.css" />
+    <link rel="stylesheet" href="./css copy/style.css" />
+    <link rel="stylesheet" href="./css copy/animations.css" />
+    <link rel="icon" href="" size="any" />
+    <link rel="icon" href="" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="" />
+  </head>
+  <body class="page"></body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Сканирование</title>
+  <link rel="shortcut icon" href="./icons/scanner/scanner.ico" type="image/x-icon">
+  <link rel="stylesheet" href="./css/global.css">
+  <link rel="stylesheet" href="./css/scanner/style.css">
+</head>
+
+<body>
+  <div class="main-container" id="main-container">
+    <div class="scanner-menu" id="scanner-menu">
+      <div class="accept-deny-holder" id="accept-deny-holder">
+        <div class="accept-deny-message" id="accept-deny-message">
+          <img src="" id="accept-deny-img">
+          <div class="accept-deny-text" id="accept-deny-text"></div>
+          <div class="reason" id="reason">Причина отказа hjjjhfj hjfhj hdfhj hjksh jkh jkdjks hjdjks hdjkd sh</div>
+        </div>
+      </div>
+      <div class="menu-header" id="menu-header">
+        <img src="./icons/guap-sign_b 1.svg" alt="SUAI" class="suai">
+        <div class="menu-name">Сканнер QR-кодов</div>
+      </div>
+      <div class="QR-code" id="QR-code">
+        <div class="camera-wrapper" id="camera-wrapper">
+          <div class="restart-button" id="restart-button">
+            <img src="./icons/scanner/reload.png" alt="restart">
+          </div>
+          <div class="error-text" id="error-text"></div>
+          <video class="camera" id="camera" autoplay playsinline></video>
+        </div>
+        <div class="upload-files" id="upload-files">
+          <input type="file" name="file" class="file-input" id="file-input">
+          <img src="./icons/scanner/download-arrow.png" alt="download-arrow">
+        </div>
+      </div>
+      <div class="info" id="info">
+        <table class="table-info" id="table-info">
+          <tr data-attribute="direction">
+            <td>Вход/Выход:</td>
+            <td>-</td>
+          </tr>
+          <tr data-attribute="role">
+            <td>Роль:</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td style="padding-top: 5%;"></td>
+          </tr>
+          <tr data-attribute="first_name">
+            <td>Имя:</td>
+            <td>-</td>
+          </tr>
+          <tr data-attribute="last_name">
+            <td>Фамилия:</td>
+            <td>-</td>
+          </tr>
+          <tr data-attribute="patronymic">
+            <td>Отчество:</td>
+            <td>-</td>
+          </tr>
+          <tr data-attribute="email">
+            <td>Email:</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td style="padding-top: 5%;"></td>
+          </tr>
+          <tr data-attribute="purpose">
+            <td>Цель:</td>
+            <td>-</td>
+          </tr>
+          <!-- <tr data-attribute="phone">
+            <td>Телефон:</td>
+            <td>-</td>
+          </tr> -->
+        </table>
+      </div>
+      <div class="button cancel-button" id="cancel-button">Отмена</div>
+    </div>
+  </div>
+  <script type="module" src="./js/scanner.js"></script>
+</body>
+
+</html>
