@@ -18,5 +18,10 @@ async function request(path, options = {}) {
 export const apiMethods = {
     login: (data) => request('/auth/login', {method: "POST", body: JSON.stringify(data)}),
     verify: (data) => request('/scan/verify', {method: "POST", headers: {'X-Scanner-Key': 'test_api'}, body: JSON.stringify(data)}),
+    //админские темы
     adminLogin: (data) => request('/admin/auth/login', {method: "POST", body: JSON.stringify(data)}),
+    //работа с пользователями
+    getUsers: (adminToken) => request('/admin/users', {headers: {'Authorization':`Bearer ${adminToken}`}}),
+    createUser: (adminToken, data) => request('/admin/users', {method: "POST", body: JSON.stringify(data), headers: {'Authorization':`Bearer ${adminToken}`}}),
+    getGuests: (adminToken) => request('/admin/guests', {headers: {'Authorization':`Bearer ${adminToken}`}}),
 }
