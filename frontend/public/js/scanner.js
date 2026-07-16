@@ -106,13 +106,15 @@ function fillTable(visitorInfo) {
     const person = visitorInfo.user ?? visitorInfo.guest;
     tableInfo.querySelectorAll('tr[data-attribute]')
         .forEach(tr => {
-            const info = person?.[tr.dataset.attribute] ?? "-";
+            const key = tr.dataset.attribute;
+
+            const info = visitorInfo?.[key] ?? person?.[key] ?? "-";
             tr.querySelector('td:last-child').textContent = info;
         });
 }
 
 function clearTable() {
-    tableInfo.querySelectorAll('tr')
+    tableInfo.querySelectorAll('tr[data-attribute]')
         .forEach(tr => {
             tr.querySelector('td:last-child').textContent = "-";
         });
