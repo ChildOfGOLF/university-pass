@@ -81,6 +81,7 @@ tabButtons.forEach(button => {
 
 async function loadUsers() {
     const token = localStorage.getItem("admin_token");
+    console.log(token);
     try {
         const users = await apiMethods.getUsers(token);
 
@@ -98,7 +99,7 @@ async function loadUsers() {
                 <td>${user.is_active ? 'активен' : 'неактивен'}</td>
                 <td>${user.role}</td>
                 <td>
-                    <button class = "delete-button" onclick = "deleteUser(${user.id})">пока пупсик</button>
+                    <button class = "delete-button" onclick = "deleteUser('${user.id}')">пока пупсик</button>
                 </td>
             </tr>`
         ).join('');
@@ -125,10 +126,10 @@ async function loadGuests() {
                 <td>${new Date(guest.created_at).toLocaleDateString('ru-RU')}</td>
                 <td>${new Date(guest.valid_to).toLocaleDateString('ru-RU')}</td>
                 <td>${guest.purpose}</td>
-                <td>${guest.is_used}</td>
-                <td>${guest.is_entered}</td>
+                <td>${guest.is_used ? "Да" : "Нет"}</td>
+                <td>${guest.is_entered ? "Да" : "Нет"}</td>
                 <td>
-                    <button class = "delete-button" onclick = "deleteGuest(${guest.id})">пока пупс</button>
+                    <button class = "delete-button" onclick = "deleteGuest('${guest.id}')">пока пупс</button>
                 </td>
             </tr>
         `).join('');
@@ -151,7 +152,7 @@ window.deleteUser = async (userId) => {
 window.deleteGuest = async (guestId) => {
     const token = localStorage.getItem("admin_token");
     try {
-        await apiMethods.deleteGuest(token, guestId);
+        await apiMethods.revokePass(token, guestId);
         loadGuests()
     } catch (err) {
         console.log("Ошибка при удалении");
@@ -188,14 +189,14 @@ if (formCreateUser) {
             }
 
             const data = {
-            email: document.getElementById("user-email").value.trim(),
-            first_name: document.getElementById("user-first_name").value.trim(),
-            group_id: group.id,
-            last_name: document.getElementById("user-second_name").value.trim(),
-            password: document.getElementById("user-password").value.trim(),
-            patronymic: document.getElementById("user-patronymic").value.trim(),
-            phone: document.getElementById("user-phone").value.trim(),
-            role: document.getElementById("user-role").value.trim()
+                email: document.getElementById("user-email").value.trim(),
+                first_name: document.getElementById("user-first_name").value.trim(),
+                group_id: group.id,
+                last_name: document.getElementById("user-second_name").value.trim(),
+                password: document.getElementById("user-password").value.trim(),
+                patronymic: document.getElementById("user-patronymic").value.trim(),
+                phone: document.getElementById("user-phone").value.trim(),
+                role: document.getElementById("user-role").value.trim()
             };
             const res = await apiMethods.createUser(token, data);
 
@@ -205,6 +206,35 @@ if (formCreateUser) {
         } catch (err) {
             console.log(err.message);
             alert(err.message)
+        }
+    })
+}
+
+if (formCreateGuest) {
+    formCreateGuest.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const token = localStorage.getItem("admin_token");
+
+        try {
+            const data = {
+                first_name: document.getElementById("guest-first_name").value.trim(),
+                last_name: document.getElementById("guest-second_name").value.trim(),
+                patronymic: document.getElementById("guest-patronymic").value.trim(),
+                purpose: document.getElementById("guest-purpose").value.trim(),
+                valid_from: new Date(document.getElementById("guest-valid_from").value).toISOString(),
+                valid_to: new Date(document.getElementById("guest-valid_to").value).toISOString()
+            }
+
+            await apiMethods.createPass(token, data);
+
+            document.getElementById("modal-create-guest").hidePopover();
+            formCreateGuest.reset();
+            loadGuests();
+        }
+        catch (err) {
+            console.log(err.message);
+            alert(err.message);
         }
     })
 }
