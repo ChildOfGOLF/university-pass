@@ -6,6 +6,7 @@ import (
 	"encoding/base32"
 	"fmt"
 	"time"
+	"university-pass/internal/config"
 	"university-pass/internal/middleware"
 	"university-pass/internal/model"
 	"university-pass/internal/repository"
@@ -107,7 +108,7 @@ func (s *AuthService) VerifyUser(ctx context.Context, deviceID, otpCode, scanner
 
 	ok, _ := totp.ValidateCustom(otpCode, device.SecretKey, time.Now().UTC(), totp.ValidateOpts{
 		Period:    30,
-		Skew:      2,
+		Skew:      1,
 		Digits:    otp.DigitsSix,
 		Algorithm: otp.AlgorithmSHA1,
 	})
@@ -269,5 +270,5 @@ func (s *AuthService) AdminLogin(ctx context.Context, email, password string) (s
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte("vBS0K4W5DRo2iTQI1JmnuqIouvnHaBbsyvXxqk1Ibhz")) // TODO: move to env
+	return token.SignedString([]byte(config.JWTSecret))
 }

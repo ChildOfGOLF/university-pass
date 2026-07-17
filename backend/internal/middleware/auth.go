@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"university-pass/internal/config"
+	"university-pass/internal/repository"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -15,16 +17,13 @@ const (
 	CtxRole   ctxKey = "role"
 )
 
-// TODO: move to env
-var jwtSecret = []byte("vBS0K4W5DRo2iTQI1JmnuqIouvnHaBbsyvXxqk1Ibhz")
-
 type Claims struct {
 	UserID int    `json:"user_id"`
 	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func RequireRole(roles ...string) func(http.Handler) http.Handler {
+func RequireRole(userRepo *repository.UserRepository, roles ...string) func(http.Handler) http.Handler {
 	allowedRoles := make(map[string]bool, len(roles))
 	for _, r := range roles {
 		allowedRoles[r] = true
@@ -42,7 +41,7 @@ func RequireRole(roles ...string) func(http.Handler) http.Handler {
 
 			claims := &Claims{}
 			token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-				return jwtSecret, nil
+				return []byte(config.JWTSecret), nil
 			})
 
 			if err != nil || !token.Valid {
@@ -51,6 +50,17 @@ func RequireRole(roles ...string) func(http.Handler) http.Handler {
 			}
 
 			if !allowedRoles[claims.Role] {
+				http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
+				return
+			}
+
+			user, err := userRepo.GetByUserID(r.Context(), claims.UserID)
+			if err != nil {
+				http.Error(w, `{"error":"failed to verify user"}`, http.StatusInternalServerError)
+				return
+			}
+
+			if user == nil || !user.IsActive || user.Role != claims.Role {
 				http.Error(w, `{"error":"forbidden"}`, http.StatusForbidden)
 				return
 			}
