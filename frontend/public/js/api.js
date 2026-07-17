@@ -33,6 +33,6 @@ export const apiMethods = {
     createPass: (adminToken, data) => request('/admin/guests', {method: "POST", body: JSON.stringify(data), headers: {'Authorization':`Bearer ${adminToken}`}}),
     revokePass: (adminToken, id) => request(`/admin/guests/${id}/revoke`, {method: "POST", headers: {'Authorization':`Bearer ${adminToken}`}}),
 
-    getLogs: (adminToken) => request('/admin/admin-logs', {headers: {'Authorization':`Bearer ${adminToken}`}}),
+    getLogs: (adminToken) => request('/admin/logs', {headers: {'Authorization':`Bearer ${adminToken}`}}),
     getGroups: (adminToken) => request('/admin/groups', {headers: {'Authorization':`Bearer ${adminToken}`}}),
 };

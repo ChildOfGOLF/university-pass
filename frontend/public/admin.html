@@ -126,13 +126,20 @@
         </div>
 
         <div class="actions-buttons">
+          <button class="action-button admin-button" id="logs-button">
+            логи
+          </button>
           <button class="action-button admin-button" id="logout-admin">
             выйти
           </button>
         </div>
 
-        <div id="modal-create-user" popover="manual">
-          <button popovertargetaction="hide" popovertarget="modal-create-user">
+        <div id="modal-create-user" class="admin-modal" popover="manual">
+          <button
+            popovertargetaction="hide"
+            class="close-button"
+            popovertarget="modal-create-user"
+          >
             закрыть окно
           </button>
           <form id="form-create-user">
@@ -174,8 +181,12 @@
           </form>
         </div>
 
-        <div id="modal-create-guest" popover="manual">
-          <button popovertargetaction="hide" popovertarget="modal-create-guest">
+        <div id="modal-create-guest" class="admin-modal" popover="manual">
+          <button
+            popovertargetaction="hide"
+            popovertarget="modal-create-guest"
+            class="close-button"
+          >
             закрыть окно
           </button>
           <form id="form-create-guest">
@@ -213,6 +224,16 @@
             </button>
           </form>
         </div>
+      </div>
+      <div id="modal-logs" popover="manual" class="admin-modal">
+        <button
+          popovertargetaction="hide"
+          popovertarget="modal-logs"
+          class="close-button"
+        >
+          закрыть окно
+        </button>
+        <div id="logs-container" class="logs-list"></div>
       </div>
     </section>
     <script type="module" src="./js/admin.js"></script>

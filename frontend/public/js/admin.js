@@ -238,3 +238,53 @@ if (formCreateGuest) {
         }
     })
 }
+
+//логи
+const logsButton = document.getElementById("logs-button");
+
+
+async function loadLogs() {
+    const token = localStorage.getItem("admin_token");
+    const logsContainer = document.getElementById("logs-container");
+
+
+    try {
+        const logs = await apiMethods.getLogs(token);
+
+        if (!Array.isArray(logs)) {
+            logsContainer.innerHTML="<p class = 'logs-error' style = 'color:red'>Логи не найдены</p>";
+            return;
+        }
+
+        logs.sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at));
+
+        logsContainer.innerHTML = logs.map(log => {
+            const logDirection = log.direction == "enter" ? "Вход" : "Выход";
+            const logType = log.direction;
+
+            return `
+                <div class = "log-item small-text">
+                    <div class = "log-header ${logType}">
+                        <span class = "log-direction"> ${logDirection} </span>
+                        <span class = "log-date">${log.logged_at} </span>
+                        <span class = "log-allowed">Пропущен: ${log.is_allowed ? "Да" : "Нет"} </span>
+                        <span class = "logs-building">Строение: ${log.building}</span>
+                        <span class = "log-gate">КПП: ${log.gate}</span>
+                        <span class = "log-acces_point">Точка доступа: ${log.acces_point}</span>
+                    </div>
+                    <span class = "log-name">${log.full_name} - ${log.person_type}</span>
+                    <span class = "log-reason">${log.reason}</span>
+                </div>
+            `
+        }).join('');
+    }
+    catch(err) {
+        console.log(err.message);
+    }
+}
+
+if (logsButton) {
+    logsButton.addEventListener("click", () => {
+        loadLogs();
+    });
+}
