@@ -69,11 +69,12 @@
                   <td>статус</td>
                   <td>роль</td>
                   <td></td>
+                  <td></td>
                 </tr>
               </thead>
               <tbody id="users-table-body">
                 <tr>
-                  <td colspan="7">Загрузка</td>
+                  <td colspan="9">Загрузка</td>
                 </tr>
               </tbody>
             </table>
@@ -84,13 +85,6 @@
             popovertarget="modal-create-user"
           >
             создать пользователя
-          </button>
-          <button
-            class="action-button admin-button"
-            id="update-user-button"
-            popovertarget="modal-update-user"
-          >
-            обновить пользователя
           </button>
         </div>
 
@@ -225,6 +219,49 @@
 
             <button class="submit-button big-text" type="submit">
               создать
+            </button>
+          </form>
+        </div>
+
+        <div id="modal-update-user" class="admin-modal" popover="manual">
+          <button
+            popovertargetaction="hide"
+            class="close-button"
+            popovertarget="modal-update-user"
+          >
+            закрыть окно
+          </button>
+          <form id="form-update-user">
+            <div class="form-input">
+              <label for="update-user-second_name" class="form-label"
+                >фамилия</label
+              >
+              <input type="text" id="update-user-second_name" required />
+            </div>
+            <div class="form-input">
+              <label for="update-user-first_name" class="form-label">имя</label>
+              <input type="text" id="update-user-first_name" required />
+            </div>
+            <div class="form-input">
+              <label for="update-user-patronymic" class="form-label"
+                >отчество</label
+              >
+              <input type="text" id="update-user-patronymic" required />
+            </div>
+            <div class="form-input">
+              <label for="update-user-phone" class="form-label"
+                >номер телефона</label
+              >
+              <input type="text" id="update-user-phone" required />
+            </div>
+            <div class="form-input">
+              <label for="update-user-is_active" class="form-label"
+                >активен</label
+              >
+              <input type="checkbox" id="update-user-is_active" />
+            </div>
+            <button class="submit-button big-text" type="submit">
+              сохранить
             </button>
           </form>
         </div>

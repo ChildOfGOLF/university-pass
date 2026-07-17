@@ -79,11 +79,14 @@ tabButtons.forEach(button => {
     });
 })
 
+let userBuff = [];
+
 async function loadUsers() {
     const token = localStorage.getItem("admin_token");
     
     try {
         const users = await apiMethods.getUsers(token);
+        userBuff = users;
 
         if (!Array.isArray(users)) {
             userTableBody.innerHTML = "<tr> <td colspan = '7'>Пользователи не нашлись</td></tr>";
@@ -99,7 +102,10 @@ async function loadUsers() {
                 <td>${user.is_active ? 'активен' : 'неактивен'}</td>
                 <td>${user.role}</td>
                 <td>
-                    <button class = "delete-button" onclick = "deleteUser('${user.id}')">пока пупсик</button>
+                    <button class = "user-button" onclick = "openUpdateUser('${user.id}')">обновить</button>
+                </td>
+                <td>
+                    <button class = "user-button" onclick = "deleteUser('${user.id}')">удалить</button>
                 </td>
             </tr>`
         ).join('');
@@ -108,6 +114,69 @@ async function loadUsers() {
         userTableBody.innerHTML = `<tr><td colspan = '7' style = "color: red">Ошибка ${err.message}</td></tr>`
     }
 }
+
+
+//Удаление юзера
+window.deleteUser = async (userId) => {
+    const token = localStorage.getItem("admin_token");
+    try {
+        await apiMethods.deleteUser(token, userId);
+        loadUsers()
+    } catch (err) {
+        console.log("Ошибка при удалении");
+    }
+}
+
+//Форма обновления юзера
+
+let editingUserId = 0;
+
+window.openUpdateUser = (userId) => {
+    const user = userBuff.find(u => u.id == userId);
+    if (!user) {
+        return;
+    }
+
+    editingUserId = userId;
+
+    document.getElementById("update-user-second_name").value = user.last_name;
+    document.getElementById("update-user-first_name").value = user.first_name;
+    document.getElementById("update-user-patronymic").value = user.patronymic;
+    document.getElementById("update-user-phone").value = user.phone;
+    document.getElementById("update-user-is_active").checked = user.is_active;
+
+    document.getElementById("modal-update-user").showPopover();
+}
+
+
+const formUpdateUser = document.getElementById("form-update-user");
+
+if (formUpdateUser) {
+    formUpdateUser.addEventListener("submit", async(event) => {
+        event.preventDefault();
+
+        const token = localStorage.getItem("admin_token");
+        const data = {
+            first_name: document.getElementById("update-user-first_name").value.trim(),
+            is_active: document.getElementById("update-user-is_active").checked,
+            last_name: document.getElementById("update-user-second_name").value.trim(),
+            patronymic: document.getElementById("update-user-patronymic").value.trim(),
+            phone: document.getElementById("update-user-phone").value.trim()
+        };
+
+        try {
+            await apiMethods.updateUser(token, data, editingUserId);
+
+            document.getElementById("modal-update-user").hidePopover();
+            loadUsers();
+        }
+        catch (err) {
+            console.log(err.message);
+            alert(err.message);
+        }
+    })
+}
+
 
 async function loadGuests() {
     const token = localStorage.getItem("admin_token");
@@ -139,15 +208,7 @@ async function loadGuests() {
     }
 }
 
-window.deleteUser = async (userId) => {
-    const token = localStorage.getItem("admin_token");
-    try {
-        await apiMethods.deleteUser(token, userId);
-        loadUsers()
-    } catch (err) {
-        console.log("Ошибка при удалении");
-    }
-}
+
 
 window.deleteGuest = async (guestId) => {
     const token = localStorage.getItem("admin_token");
