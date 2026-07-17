@@ -177,7 +177,7 @@ if (formCreateUser) {
         const data = {
             email: document.getElementById("user-email").value.trim(),
             first_name: document.getElementById("user-first_name").value.trim(),
-            group_id: 0,
+            group_id: 1,
             last_name: document.getElementById("user-second_name").value.trim(),
             password: document.getElementById("user-password").value.trim(),
             patronymic: document.getElementById("user-patronymic").value.trim(),
@@ -187,11 +187,12 @@ if (formCreateUser) {
         try {
             const res = await apiMethods.createUser(token, data);
 
-            document.getElementById("form-create-user").hidePopover();
+            document.getElementById("modal-create-user").hidePopover();
             formCreateUser.reset();
             loadUsers();
-        } catch (res) {
-            console.log(res);
+        } catch (err) {
+            console.log(err.message);
+            alert(err.message)
         }
     })
 }

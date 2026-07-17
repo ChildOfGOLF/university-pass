@@ -10,7 +10,8 @@ async function request(path, options = {}) {
     });
     if (!res.ok) {
         let errorMessage = await res.json().catch(() => ({}) );
-        throw new Error(errorMessage.message);
+        const message = errorMessage.message || errorMessage.error || errorMessage.detail || `Ошибка ${res.status}`
+        throw new Error(message);
     } 
     return res.json();
 }
