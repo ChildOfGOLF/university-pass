@@ -174,16 +174,23 @@ if (formCreateUser) {
         event.preventDefault();
         
         const token = localStorage.getItem("admin_token");
+        const groupName = document.getElementById("user-group").value.trim();
+
+        const groups = await apiMethods.getGroups(token);
+        const group = groups.find(g=> g.name == groupName);
+
+
         const data = {
             email: document.getElementById("user-email").value.trim(),
             first_name: document.getElementById("user-first_name").value.trim(),
-            group_id: 1,
+            group_id: group.id,
             last_name: document.getElementById("user-second_name").value.trim(),
             password: document.getElementById("user-password").value.trim(),
             patronymic: document.getElementById("user-patronymic").value.trim(),
             phone: document.getElementById("user-phone").value.trim(),
             role: document.getElementById("user-role").value.trim()
         };
+    
         try {
             const res = await apiMethods.createUser(token, data);
 
