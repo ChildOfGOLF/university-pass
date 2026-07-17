@@ -26,7 +26,7 @@ const (
 	processingKey = "logs:processing"
 	deadLetterKey = "logs:deadletter"
 	batchSize     = 50
-	flushEvery    = 5 * time.Minute
+	flushEvery    = 1 * time.Second
 	pollInterval  = 200 * time.Millisecond
 )
 
