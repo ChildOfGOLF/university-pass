@@ -176,11 +176,18 @@ if (formCreateUser) {
         const token = localStorage.getItem("admin_token");
         const groupName = document.getElementById("user-group").value.trim();
 
-        const groups = await apiMethods.getGroups(token);
-        const group = groups.find(g=> g.name == groupName);
+        
+    
+        try {
+            const groups = await apiMethods.getGroups(token);
+            const group = groups.find(g=> g.name == groupName);
 
+            if (!group) {
+                alert("группы не найдено");
+                return;
+            }
 
-        const data = {
+            const data = {
             email: document.getElementById("user-email").value.trim(),
             first_name: document.getElementById("user-first_name").value.trim(),
             group_id: group.id,
@@ -189,9 +196,7 @@ if (formCreateUser) {
             patronymic: document.getElementById("user-patronymic").value.trim(),
             phone: document.getElementById("user-phone").value.trim(),
             role: document.getElementById("user-role").value.trim()
-        };
-    
-        try {
+            };
             const res = await apiMethods.createUser(token, data);
 
             document.getElementById("modal-create-user").hidePopover();
