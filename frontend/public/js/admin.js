@@ -81,7 +81,7 @@ tabButtons.forEach(button => {
 
 async function loadUsers() {
     const token = localStorage.getItem("admin_token");
-    console.log(token);
+    
     try {
         const users = await apiMethods.getUsers(token);
 
