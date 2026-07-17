@@ -257,6 +257,12 @@ input[type="checkbox"]:checked~span::after {
     .form-heading {
         margin-right: 50%;
     }
+
+    .page {
+        animation: none !important;
+        transform: none !important;
+        background-size: cover;
+    }
 }
 
 /*Стили для админки*/

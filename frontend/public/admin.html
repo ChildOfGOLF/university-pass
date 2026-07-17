@@ -72,8 +72,8 @@
                 </tr>
               </thead>
               <tbody id="users-table-body">
-                <tr colspan="7">
-                  <td>Загрузка</td>
+                <tr>
+                  <td colspan="7">Загрузка</td>
                 </tr>
               </tbody>
             </table>
@@ -110,8 +110,8 @@
                 </tr>
               </thead>
               <tbody id="guests-table-body">
-                <tr colspan="8">
-                  <td>Загрузка</td>
+                <tr>
+                  <td colspan="8">Загрузка</td>
                 </tr>
               </tbody>
             </table>
@@ -154,7 +154,7 @@
             </div>
             <div class="form-input">
               <label for="user-password" class="form-label">пароль</label>
-              <input type="text" id="user-phone" required />
+              <input type="text" id="user-password" required />
             </div>
             <div class="form-input">
               <label for="user-phone" class="form-label">номер телефона</label>
@@ -164,6 +164,46 @@
               <label for="user-role" class="form-label">роль</label>
               <input type="text" id="user-role" required />
             </div>
+            <button class="submit-button big-text" type="submit">
+              создать
+            </button>
+          </form>
+        </div>
+
+        <div id="modal-create-guest" popover="manual">
+          <button popovertargetaction="hide" popovertarget="modal-create-guest">
+            закрыть окно
+          </button>
+          <form id="form-create-guest">
+            <div class="form-input">
+              <label for="guest-second_name" class="form-label">фамилия</label>
+              <input type="text" id="guest-name" required />
+            </div>
+            <div class="form-input">
+              <label for="guest-first_name" class="form-label">имя</label>
+              <input type="text" id="guest-first_name" required />
+            </div>
+            <div class="form-input">
+              <label for="guest-patronymic" class="form-label">отчество</label>
+              <input type="text" id="guest-patronymic" required />
+            </div>
+            <div class="form-input">
+              <label for="guest-purpose" class="form-label">цель</label>
+              <input type="text" id="guest-purpose" required />
+            </div>
+            <div class="form-input">
+              <label for="guest-valid_from" class="form-label"
+                >действителен с</label
+              >
+              <input type="date" id="guest-valid_from" required />
+            </div>
+            <div class="form-input">
+              <label for="guest-valid_to" class="form-label"
+                >действителен до</label
+              >
+              <input type="date" id="guest-valid_to" required />
+            </div>
+
             <button class="submit-button big-text" type="submit">
               создать
             </button>

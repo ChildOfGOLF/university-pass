@@ -166,3 +166,32 @@ if (logoutButton) {
 }
 
 // Модальные окна для создание гостей и пользователей
+const formCreateUser = document.getElementById("form-create-user");
+const formCreateGuest = document.getElementById("form-create-guest");
+
+if (formCreateUser) {
+    formCreateUser.addEventListener("submit", async(event) => {
+        event.preventDefault();
+        
+        const token = localStorage.getItem("admin_token");
+        const data = {
+            email: document.getElementById("user-email").value.trim(),
+            first_name: document.getElementById("user-first_name").value.trim(),
+            group_id: 0,
+            last_name: document.getElementById("user-second_name").value.trim(),
+            password: document.getElementById("user-password").value.trim(),
+            patronymic: document.getElementById("user-patronymic").value.trim(),
+            phone: document.getElementById("user-phone").value.trim(),
+            role: document.getElementById("user-role").value.trim()
+        };
+        try {
+            const res = await apiMethods.createUser(token, data);
+
+            document.getElementById("form-create-user").hidePopover();
+            formCreateUser.reset();
+            loadUsers();
+        } catch (res) {
+            console.log(res);
+        }
+    })
+}
