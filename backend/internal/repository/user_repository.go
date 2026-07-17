@@ -67,16 +67,14 @@ func (r *UserRepository) GetByUserID(ctx context.Context, userID int) (*model.Us
 func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*model.UserDevice, error) {
 	key := fmt.Sprintf("user:device:%d", userID)
 
-	if r.db.Rdb != nil {
-		val, err := r.db.Rdb.Get(ctx, key).Result()
-		if err == nil {
-			var d model.UserDevice
-			if err := json.Unmarshal([]byte(val), &d); err == nil {
-				return &d, nil
-			}
-		} else if err != redis.Nil {
-			return nil, fmt.Errorf("failed to get device from redis: %w", err)
+	val, err := r.db.Rdb.Get(ctx, key).Result()
+	if err == nil {
+		var d model.UserDevice
+		if err := json.Unmarshal([]byte(val), &d); err == nil {
+			return &d, nil
 		}
+	} else if err != redis.Nil {
+		return nil, fmt.Errorf("failed to get device from redis: %w", err)
 	}
 
 	query := `
@@ -86,14 +84,8 @@ func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*mo
 	`
 
 	var d model.UserDevice
-
-	err := r.db.Pg.QueryRow(ctx, query, userID).Scan(
-		&d.UserID,
-		&d.DeviceID,
-		&d.SecretKey,
-		&d.LastUsedStep,
-		&d.CreatedAt,
-		&d.UpdatedAt,
+	err = r.db.Pg.QueryRow(ctx, query, userID).Scan(
+		&d.UserID, &d.DeviceID, &d.SecretKey, &d.LastUsedStep, &d.CreatedAt, &d.UpdatedAt,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -102,10 +94,8 @@ func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*mo
 		return nil, err
 	}
 
-	if r.db.Rdb != nil {
-		if b, err := json.Marshal(d); err == nil {
-			_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
-		}
+	if b, err := json.Marshal(d); err == nil {
+		_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
 	}
 
 	return &d, nil
@@ -115,16 +105,14 @@ func (r *UserRepository) GetDeviceByUserID(ctx context.Context, userID int) (*mo
 func (r *UserRepository) GetDeviceByDeviceID(ctx context.Context, deviceID string) (*model.UserDevice, error) {
 	key := fmt.Sprintf("device:secret:%s", deviceID)
 
-	if r.db.Rdb != nil {
-		val, err := r.db.Rdb.Get(ctx, key).Result()
-		if err == nil {
-			var d model.UserDevice
-			if err := json.Unmarshal([]byte(val), &d); err == nil {
-				return &d, nil
-			}
-		} else if err != redis.Nil {
-			return nil, fmt.Errorf("failed to get device from redis: %w", err)
+	val, err := r.db.Rdb.Get(ctx, key).Result()
+	if err == nil {
+		var d model.UserDevice
+		if err := json.Unmarshal([]byte(val), &d); err == nil {
+			return &d, nil
 		}
+	} else if err != redis.Nil {
+		return nil, fmt.Errorf("failed to get device from redis: %w", err)
 	}
 
 	query := `
@@ -134,13 +122,8 @@ func (r *UserRepository) GetDeviceByDeviceID(ctx context.Context, deviceID strin
 	`
 
 	var d model.UserDevice
-	err := r.db.Pg.QueryRow(ctx, query, deviceID).Scan(
-		&d.UserID,
-		&d.DeviceID,
-		&d.SecretKey,
-		&d.LastUsedStep,
-		&d.CreatedAt,
-		&d.UpdatedAt,
+	err = r.db.Pg.QueryRow(ctx, query, deviceID).Scan(
+		&d.UserID, &d.DeviceID, &d.SecretKey, &d.LastUsedStep, &d.CreatedAt, &d.UpdatedAt,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -149,10 +132,8 @@ func (r *UserRepository) GetDeviceByDeviceID(ctx context.Context, deviceID strin
 		return nil, err
 	}
 
-	if r.db.Rdb != nil {
-		if b, err := json.Marshal(d); err == nil {
-			_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
-		}
+	if b, err := json.Marshal(d); err == nil {
+		_ = r.db.Rdb.Set(ctx, key, b, 24*time.Hour).Err()
 	}
 
 	return &d, nil
@@ -174,21 +155,19 @@ func (r *UserRepository) UpsertDeviceSecret(ctx context.Context, userID int, dev
 		return fmt.Errorf("failed to upsert device secret: %w", err)
 	}
 
-	if r.db.Rdb != nil {
-		if oldDeviceID != "" && oldDeviceID != deviceID {
-			_ = r.db.Rdb.Del(ctx, fmt.Sprintf("device:secret:%s", oldDeviceID)).Err()
-		}
+	if oldDeviceID != "" && oldDeviceID != deviceID {
+		_ = r.db.Rdb.Del(ctx, fmt.Sprintf("device:secret:%s", oldDeviceID)).Err()
+	}
 
-		d := model.UserDevice{
-			UserID:       userID,
-			DeviceID:     deviceID,
-			SecretKey:    secretKey,
-			LastUsedStep: nil,
-		}
-		if b, err := json.Marshal(d); err == nil {
-			_ = r.db.Rdb.Set(ctx, fmt.Sprintf("user:device:%d", userID), b, 24*time.Hour).Err()
-			_ = r.db.Rdb.Set(ctx, fmt.Sprintf("device:secret:%s", deviceID), b, 24*time.Hour).Err()
-		}
+	d := model.UserDevice{
+		UserID:       userID,
+		DeviceID:     deviceID,
+		SecretKey:    secretKey,
+		LastUsedStep: nil,
+	}
+	if b, err := json.Marshal(d); err == nil {
+		_ = r.db.Rdb.Set(ctx, fmt.Sprintf("user:device:%d", userID), b, 24*time.Hour).Err()
+		_ = r.db.Rdb.Set(ctx, fmt.Sprintf("device:secret:%s", deviceID), b, 24*time.Hour).Err()
 	}
 
 	return nil
@@ -224,15 +203,10 @@ func (r *UserRepository) UpdateLastUsedStepIfGreater(ctx context.Context, userID
 }
 
 func (r *UserRepository) EnqueueAccessLog(ctx context.Context, event model.AccessLogEvent) error {
-	if r.db.Rdb == nil {
-		return nil
-	}
-
 	b, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
-
 	return r.db.Rdb.RPush(ctx, "logs:queue", b).Err()
 }
 
@@ -265,7 +239,9 @@ func (r *UserRepository) CreateUser(ctx context.Context, p CreateUserParams) (*m
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	var userID int
 	var createdAt time.Time
@@ -329,6 +305,28 @@ func (r *UserRepository) ListUsers(ctx context.Context) ([]*model.User, error) {
 		users = append(users, &u)
 	}
 	return users, rows.Err()
+}
+
+func (r *UserRepository) ListGroups(ctx context.Context) ([]*model.GroupResponse, error) {
+	rows, err := r.db.Pg.Query(ctx, `
+		SELECT id, group_name
+		FROM groups
+		ORDER BY id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list groups: %w", err)
+	}
+	defer rows.Close()
+
+	var groups []*model.GroupResponse
+	for rows.Next() {
+		var g model.GroupResponse
+		if err := rows.Scan(&g.ID, &g.Name); err != nil {
+			return nil, err
+		}
+		groups = append(groups, &g)
+	}
+	return groups, rows.Err()
 }
 
 func (r *UserRepository) UpdateUser(ctx context.Context, userID int, p model.UpdateUserRequest) error {

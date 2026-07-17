@@ -18,27 +18,38 @@ type LogService struct {
 }
 
 func NewLogService(logRepo *repository.LogRepository, rdb *redis.Client) *LogService {
-	return &LogService{
-		logRepo: logRepo,
-		rdb:     rdb,
-	}
+	return &LogService{logRepo: logRepo, rdb: rdb}
 }
+
+const (
+	logQueueKey   = "logs:queue"
+	processingKey = "logs:processing"
+	deadLetterKey = "logs:deadletter"
+	batchSize     = 50
+	flushEvery    = 1 * time.Second
+	pollInterval  = 200 * time.Millisecond
+)
 
 func (ls *LogService) PublicAccessLogEvent(ctx context.Context, event *model.AccessLogEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
-
-	return ls.rdb.RPush(ctx, "logs:queue", string(data)).Err()
+	return ls.rdb.RPush(ctx, logQueueKey, string(data)).Err()
 }
 
-const (
-	logQueueKey  = "logs:queue"
-	batchSize    = 50
-	flushEvery   = 5 * time.Minute
-	pollInterval = 200 * time.Millisecond
-)
+func (ls *LogService) RecoverInFlight(ctx context.Context) error {
+	for {
+		val, err := ls.rdb.LMove(ctx, processingKey, logQueueKey, "left", "left").Result()
+		if err == redis.Nil {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to recover in-flight logs: %w", err)
+		}
+		log.Printf("recovered in-flight log event from previous run: %s", val)
+	}
+}
 
 func (ls *LogService) StartLogWorker(ctx context.Context) {
 	flushTimer := time.NewTimer(flushEvery)
@@ -47,7 +58,7 @@ func (ls *LogService) StartLogWorker(ctx context.Context) {
 	defer ticker.Stop()
 
 	doFlush := func(flushCtx context.Context) {
-		events, err := ls.popLogBatch(flushCtx, batchSize)
+		events, raw, err := ls.popLogBatch(flushCtx, batchSize)
 		if err != nil {
 			log.Printf("Error fetching logs: %v", err)
 			return
@@ -56,30 +67,37 @@ func (ls *LogService) StartLogWorker(ctx context.Context) {
 			return
 		}
 
-		buffer := make([]*model.AccessLog, 0, len(events))
-		for _, event := range events {
+		valid := make([]*model.AccessLogEvent, 0, len(events))
+		validRaw := make([]string, 0, len(events))
+		for i, event := range events {
 			if event.AccessPointID == 0 {
-				log.Printf("Warning: AccessPointID = 0 skipping event")
+				log.Printf("Warning: AccessPointID = 0, moving event to dead-letter")
+				ls.deadLetter(context.Background(), raw[i], "access_point_id missing")
 				continue
 			}
+			valid = append(valid, event)
+			validRaw = append(validRaw, raw[i])
+		}
+		if len(valid) == 0 {
+			return
+		}
+
+		buffer := make([]*model.AccessLog, 0, len(valid))
+		for _, event := range valid {
 			buffer = append(buffer, &model.AccessLog{
-				UserID:        event.UserID,
-				GuestPassID:   event.GuestPassID,
-				AccessPointID: event.AccessPointID,
-				Direction:     event.Direction,
-				IsAllowed:     event.IsAllowed,
-				Reason:        event.Reason,
-				LoggedAt:      event.LoggedAt,
+				UserID: event.UserID, GuestPassID: event.GuestPassID,
+				AccessPointID: event.AccessPointID, Direction: event.Direction,
+				IsAllowed: event.IsAllowed, Reason: event.Reason, LoggedAt: event.LoggedAt,
 			})
 		}
 
 		if err := ls.logRepo.SaveAccessLogBatch(flushCtx, buffer); err != nil {
-			log.Printf("Error saving logs to DB: %v", err)
-			// атомарность, возвращаются обратно
-			ls.requeue(context.Background(), events)
+			log.Printf("Error saving log batch, isolating poison events: %v", err)
+			ls.saveIndividuallyOrDeadLetter(context.Background(), valid, validRaw)
 			return
 		}
 
+		ls.ackProcessed(context.Background(), validRaw)
 		log.Printf("Successfully processed %d logs", len(buffer))
 	}
 
@@ -110,40 +128,67 @@ func (ls *LogService) StartLogWorker(ctx context.Context) {
 	}
 }
 
-func (ls *LogService) requeue(ctx context.Context, events []*model.AccessLogEvent) {
-	for i := len(events) - 1; i >= 0; i-- {
-		data, err := json.Marshal(events[i])
+func (ls *LogService) popLogBatch(ctx context.Context, size int) ([]*model.AccessLogEvent, []string, error) {
+	if size <= 0 {
+		return nil, nil, nil
+	}
+
+	raw := make([]string, 0, size)
+	for i := 0; i < size; i++ {
+		val, err := ls.rdb.LMove(ctx, logQueueKey, processingKey, "left", "right").Result()
+		if err == redis.Nil {
+			break
+		}
 		if err != nil {
-			log.Printf("Failed to marshal event for requeue: %v", err)
+			return nil, nil, fmt.Errorf("failed to move logs to processing queue: %w", err)
+		}
+		raw = append(raw, val)
+	}
+
+	events := make([]*model.AccessLogEvent, 0, len(raw))
+	keptRaw := make([]string, 0, len(raw))
+	for _, r := range raw {
+		var event model.AccessLogEvent
+		if err := json.Unmarshal([]byte(r), &event); err != nil {
+			log.Printf("Failed to unmarshal event, moving to dead-letter: %v", err)
+			ls.deadLetter(context.Background(), r, "unmarshal error: "+err.Error())
 			continue
 		}
-		if err := ls.rdb.LPush(ctx, logQueueKey, string(data)).Err(); err != nil {
-			log.Printf("Failed to requeue event: %v", err)
+		events = append(events, &event)
+		keptRaw = append(keptRaw, r)
+	}
+	return events, keptRaw, nil
+}
+
+func (ls *LogService) saveIndividuallyOrDeadLetter(ctx context.Context, events []*model.AccessLogEvent, raw []string) {
+	for i, event := range events {
+		single := []*model.AccessLog{{
+			UserID: event.UserID, GuestPassID: event.GuestPassID,
+			AccessPointID: event.AccessPointID, Direction: event.Direction,
+			IsAllowed: event.IsAllowed, Reason: event.Reason, LoggedAt: event.LoggedAt,
+		}}
+		if err := ls.logRepo.SaveAccessLogBatch(ctx, single); err != nil {
+			log.Printf("Poison event, moving to dead-letter: %v", err)
+			ls.deadLetter(ctx, raw[i], err.Error())
+			continue
+		}
+		ls.ackProcessed(ctx, []string{raw[i]})
+	}
+}
+
+func (ls *LogService) ackProcessed(ctx context.Context, raw []string) {
+	for _, r := range raw {
+		if err := ls.rdb.LRem(ctx, processingKey, 1, r).Err(); err != nil {
+			log.Printf("Failed to ack processed log event: %v", err)
 		}
 	}
 }
 
-func (ls *LogService) popLogBatch(ctx context.Context, size int) ([]*model.AccessLogEvent, error) {
-	if size <= 0 {
-		return nil, nil
+func (ls *LogService) deadLetter(ctx context.Context, raw string, reason string) {
+	if err := ls.rdb.RPush(ctx, deadLetterKey, raw).Err(); err != nil {
+		log.Printf("Failed to move event to dead-letter queue (%s): %v", reason, err)
 	}
-
-	results, err := ls.rdb.LPopCount(ctx, logQueueKey, size).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to pop logs from queue: %w", err)
+	if err := ls.rdb.LRem(ctx, processingKey, 1, raw).Err(); err != nil {
+		log.Printf("Failed to remove dead-lettered event from processing queue: %v", err)
 	}
-
-	events := make([]*model.AccessLogEvent, 0, len(results))
-	for _, result := range results {
-		var event model.AccessLogEvent
-		if err := json.Unmarshal([]byte(result), &event); err != nil {
-			log.Printf("Failed to unmarshal event: %v", err)
-			continue
-		}
-		events = append(events, &event)
-	}
-	return events, nil
 }

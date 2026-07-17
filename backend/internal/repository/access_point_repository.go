@@ -30,37 +30,6 @@ func (r *AccessPointRepository) GetByScannerID(ctx context.Context, scannerID st
 	return &ap, nil
 }
 
-// Для теста запись если точки нет
-// TODO: лучше явно управлять данными в бд в проде
-func (r *AccessPointRepository) GetOrCreateByScannerID(ctx context.Context, scannerID string) (int, error) {
-	ap, err := r.GetByScannerID(ctx, scannerID)
-	if err != nil {
-		return 0, err
-	}
-	if ap != nil {
-		return ap.ID, nil
-	}
-
-	var buildingID int
-	err = r.db.Pg.QueryRow(ctx, `SELECT id FROM buildings LIMIT 1`).Scan(&buildingID)
-	if err != nil {
-		err = r.db.Pg.QueryRow(ctx, `INSERT INTO buildings (name, address) VALUES ($1, '') RETURNING id`, "default").Scan(&buildingID)
-		if err != nil {
-			return 0, fmt.Errorf("failed to create default building: %w", err)
-		}
-	}
-
-	var newID int
-	err = r.db.Pg.QueryRow(ctx,
-		`INSERT INTO access_points (building_id, scanner_id, gate_number, description) VALUES ($1,$2,$3,$4) RETURNING id`,
-		buildingID, scannerID, "unknown", "",
-	).Scan(&newID)
-	if err != nil {
-		return 0, fmt.Errorf("failed to create access_point: %w", err)
-	}
-	return newID, nil
-}
-
 func (r *AccessPointRepository) GetByAPIKey(ctx context.Context, apiKey string) (*model.AccessPoint, error) {
 	query := `SELECT id, building_id, scanner_id, gate_number, description FROM access_points WHERE api_key = $1`
 	var ap model.AccessPoint

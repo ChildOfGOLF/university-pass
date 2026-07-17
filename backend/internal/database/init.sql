@@ -155,6 +155,11 @@ INSERT INTO passwords (password_id, password_hash)
 SELECT id, '$2a$10$N.VTcjd1Yw9dYqcPNpGuSO0RqASum/Jfp6ktBJIafn2VEMoYuT5ve'
 FROM new_admin;
 
-INSERT INTO groups (group_name) VALUES ('1443') ON CONFLICT DO NOTHING;
+INSERT INTO groups (group_name) VALUES ('1443'),
+                                       ('1442'),
+                                       ('1443'),
+                                       ('1444'),
+                                       ('1445'),
+                                       ('1446') ON CONFLICT DO NOTHING;
 
 COMMIT;

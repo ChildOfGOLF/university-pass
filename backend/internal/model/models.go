@@ -32,8 +32,13 @@ type GuestPass struct {
 	ValidFrom  time.Time `json:"valid_from"`
 	ValidTo    time.Time `json:"valid_to"`
 	IsUsed     bool      `json:"is_used"`
-	IsEntered  bool      `json:"is_entered"` // TODO: think about this field
+	IsEntered  bool      `json:"is_entered"`
 	CreatedAt  time.Time `json:"created_at"`
+}
+
+type GroupResponse struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type AccessLog struct {
@@ -45,6 +50,19 @@ type AccessLog struct {
 	IsAllowed     bool      `json:"is_allowed"`
 	Reason        string    `json:"reason,omitempty"`
 	LoggedAt      time.Time `json:"logged_at"`
+}
+
+type AccessLogResponse struct {
+	ID          int64     `json:"id"`
+	PersonType  string    `json:"person_type"`
+	FullName    string    `json:"full_name"`
+	Building    string    `json:"building"`
+	AccessPoint string    `json:"access_point"`
+	Gate        string    `json:"gate"`
+	Direction   string    `json:"direction"`
+	IsAllowed   bool      `json:"is_allowed"`
+	Reason      string    `json:"reason"`
+	LoggedAt    time.Time `json:"logged_at"`
 }
 
 type AccessPoint struct {
@@ -71,18 +89,12 @@ type AccessLogEvent struct {
 	Type          string    `json:"type"` // eg scan
 	UserID        *int      `json:"user_id,omitempty"`
 	GuestPassID   *string   `json:"guest_pass_id,omitempty"`
-	AccessPointID int       `json:"access_point_id,omitempty"`
+	AccessPointID int       `json:"access_point_id"`
 	Direction     string    `json:"direction"`
 	IsAllowed     bool      `json:"is_allowed"`
 	Reason        string    `json:"reason,omitempty"`
 	ScannerID     string    `json:"scanner_id"`
 	LoggedAt      time.Time `json:"logged_at"`
-}
-
-type VerifyGuestResult struct {
-	IsAllowed bool       `json:"is_allowed"`
-	Reason    string     `json:"reason"`
-	Guest     *GuestPass `json:"guest,omitempty"`
 }
 
 type CreateUserRequest struct {
