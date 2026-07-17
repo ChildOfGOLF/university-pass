@@ -78,6 +78,20 @@
               </tbody>
             </table>
           </div>
+          <button
+            class="action-button admin-button"
+            id="create-user-button"
+            popovertarget="modal-create-user"
+          >
+            создать пользователя
+          </button>
+          <button
+            class="action-button admin-button"
+            id="create-user-button"
+            popovertarget="modal-update-user"
+          >
+            обновить пользователя
+          </button>
         </div>
 
         <div id="guests-tab" class="tab-content visually-hidden">
@@ -102,15 +116,58 @@
               </tbody>
             </table>
           </div>
+          <button
+            class="action-button admin-button"
+            id="create-guest-button"
+            popovertarget="modal-create-guest"
+          >
+            создать гостя
+          </button>
         </div>
 
         <div class="actions-buttons">
-          <button class="action-button admin-button" id="create-user-button">
-            создать пользователя
-          </button>
           <button class="action-button admin-button" id="logout-admin">
             выйти
           </button>
+        </div>
+
+        <div id="modal-create-user" popover="manual">
+          <button popovertargetaction="hide" popovertarget="modal-create-user">
+            закрыть окно
+          </button>
+          <form id="form-create-user">
+            <div class="form-input">
+              <label for="user-second_name" class="form-label">фамилия</label>
+              <input type="text" id="user-second_name" required />
+            </div>
+            <div class="form-input">
+              <label for="user-first_name" class="form-label">имя</label>
+              <input type="text" id="user-first_name" required />
+            </div>
+            <div class="form-input">
+              <label for="user-patronymic" class="form-label">отчество</label>
+              <input type="text" id="user-patronymic" required />
+            </div>
+            <div class="form-input">
+              <label for="user-email" class="form-label">почта</label>
+              <input type="email" id="user-email" required />
+            </div>
+            <div class="form-input">
+              <label for="user-password" class="form-label">пароль</label>
+              <input type="text" id="user-phone" required />
+            </div>
+            <div class="form-input">
+              <label for="user-phone" class="form-label">номер телефона</label>
+              <input type="text" id="user-phone" required />
+            </div>
+            <div class="form-input">
+              <label for="user-role" class="form-label">роль</label>
+              <input type="text" id="user-role" required />
+            </div>
+            <button class="submit-button big-text" type="submit">
+              создать
+            </button>
+          </form>
         </div>
       </div>
     </section>
