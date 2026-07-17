@@ -53,7 +53,7 @@ form.addEventListener("submit", async(event) => {
 const adminPanel = document.getElementById("admin-panel");
 const userTableBody = document.getElementById("users-table-body");
 const guestTableBody = document.getElementById("guests-table-body");
-const logoutBetton = document.getElementById("logout-admin");
+const logoutButton = document.getElementById("logout-admin");
 const createUserButton = document.getElementById("create-user-button");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabContents = document.querySelectorAll(".tab-content");
@@ -91,27 +91,78 @@ async function loadUsers() {
 
         userTableBody.innerHTML = users.map(user=>
             `<tr>
-                <td> ${user.id} </td>
-                <td> ${user.last_name} ${user.first_name} ${user.patronymic}</td>
-                <td> ${user.email} </td>
-                <td> ${new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
-                <td> ${user.is_active ? 'активен' : 'неактивен'} </td>
-                <td> ${user.role} </td>
+                <td>${user.id}</td>
+                <td>${user.last_name} ${user.first_name} ${user.patronymic}</td>
+                <td>${user.email} </td>
+                <td>${new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
+                <td>${user.is_active ? 'активен' : 'неактивен'}</td>
+                <td>${user.role}</td>
                 <td>
-                    <button class = "delete-button" onclick = "deleteUser(${user.id}")>пока пупсик</button>
-                </td>`
-        ).join();
+                    <button class = "delete-button" onclick = "deleteUser(${user.id})">пока пупсик</button>
+                </td>
+            </tr>`
+        ).join('');
     }
     catch (err) {
-        userTableBody.innerHTML = `<tr><ts colspan = '7' style = "color: red">Ошибка ${err.message}</td></tr>`
+        userTableBody.innerHTML = `<tr><td colspan = '7' style = "color: red">Ошибка ${err.message}</td></tr>`
     }
 }
 
 async function loadGuests() {
     const token = localStorage.getItem("admin_token");
     try {
-        const guest = await apiMethods.getGuests(token);
+        const guests = await apiMethods.getGuests(token);
 
+        if (!Array.isArray(guests)) {
+            guestTableBody.innerHTML = "<tr> <td colspan ='8'>Не удалось найти пользователей</td></tr>";
+            return;
+        }
 
+        guestTableBody.innerHTML = guests.map(guest => `
+            <tr>
+                <td>${guest.id}</td>
+                <td>${guest.last_name} ${guest.first_name} ${guest.patronymic}</td>
+                <td>${new Date(guest.created_at).toLocaleDateString('ru-RU')}</td>
+                <td>${new Date(guest.valid_to).toLocaleDateString('ru-RU')}</td>
+                <td>${guest.purpose}</td>
+                <td>${guest.is_used}</td>
+                <td>${guest.is_entered}</td>
+                <td>
+                    <button class = "delete-button" onclick = "deleteGuest(${guest.id})">пока пупс</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    catch(err) {
+         guestTableBody.innerHTML = `<tr><td colspan = '7' style = "color: red">Ошибка ${err.message}</td></tr>`;
     }
 }
+
+window.deleteUser = async (userId) => {
+    const token = localStorage.getItem("admin_token");
+    try {
+        await apiMethods.deleteUser(token, userId);
+        loadUsers()
+    } catch (err) {
+        console.log("Ошибка при удалении");
+    }
+}
+
+window.deleteGuest = async (guestId) => {
+    const token = localStorage.getItem("admin_token");
+    try {
+        await apiMethods.deleteGuest(token, guestId);
+        loadGuests()
+    } catch (err) {
+        console.log("Ошибка при удалении");
+    }
+}
+
+if (logoutButton) {
+    logoutButton.addEventListener("click", () => {
+        localStorage.removeItem("admin_token");
+        window.location.reload();
+    });
+}
+
+// Модальные окна для создание гостей и пользователей
