@@ -1,5 +1,5 @@
 //Обертка для всех эндпойнтова
-const BASE_URL = "http://localhost:8081";
+const BASE_URL = "http://localhost:8080";
 
 async function request(path, options = {}) {
     const res = await fetch(BASE_URL + path, {
