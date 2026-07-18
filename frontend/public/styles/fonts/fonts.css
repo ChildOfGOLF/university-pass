@@ -1,0 +1,11 @@
+@font-face {
+    font-family: 'GEOMETRIA_BOLD';
+    src: local('GEOMETRIA_BOLD'), url('./GEOMETRIA_BOLD.OTF') format('opentype');
+    font-display: swap;
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: 'GEOMETRIA_LIGHT';
+    src: local('GEOMETRIA_LIGHT'), url('./GEOMETRIA_LIGHT.OTF') format('opentype');
+}

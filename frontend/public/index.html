@@ -1,50 +1,94 @@
 <!-- CHANGE PATHS -->
 
 <!doctype html>
-<html>
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>СУАЙ КУАР</title>
-    <link rel="stylesheet" href="./css/fonts.css" />
-    <link rel="stylesheet" href="./css/global.css" />
-    <link rel="stylesheet" href="./css/variables.css" />
-    <link rel="stylesheet" href="./css/style.css" />
-    <link rel="stylesheet" href="./css/animations.css" />
+    <link rel="stylesheet" href="./styles/fonts/fonts.css" />
+    <link rel="stylesheet" href="./styles/global.css" />
+    <link rel="stylesheet" href="./styles/variables.css" />
+    <link rel="stylesheet" href="./styles/style.css" />
+    <link rel="stylesheet" href="./styles/animations.css" />
     <link rel="icon" href="" size="any" />
     <link rel="icon" href="" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="" />
   </head>
   <body class="page">
-    <form class="login-form">
-      <div class="form-group">
-        <input type="email" id="email" placeholder="Сюда логин" required />
-        <div class="error-message" id="ErrorEmail">
-          Введите корректный email
-        </div>
+    <form class="login-form" id="login-form">
+      <div class="form-heading">
+        <img src="./styles/svg/guap-logo.svg" class="form-heading__image" />
+        <p class="form-heading__text big-text">электронный пропуск</p>
       </div>
-      <div class="form-group">
+      <div class="form-input">
+        <label class="form-label normal-text" for="email">почта</label>
         <input
+          class="normal-text"
+          type="email"
+          id="email"
+          placeholder="Сюда логин"
+          required
+        />
+      </div>
+      <div class="form-input">
+        <label class="form-label normal-text" for="password">пароль</label>
+        <input
+          class="normal-text"
           type="password"
           id="password"
           placeholder="Сюда пароль"
           required
           minlength="6"
         />
-        <button type="button" id="toggle-password">_</button>
-        <div class="error-message" id="ErrorPassword">
-          Пароль должен содержать миниммум 6 символов
-        </div>
+        <button
+          type="button"
+          class="button-show"
+          id="toggle-button"
+          aria-label="Показать пароль"
+        >
+          <svg
+            class="password-show"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              class="password-circle"
+              cx="8"
+              cy="8"
+              r="7.5"
+              stroke="#03102B"
+            />
+            <ellipse
+              class="password-ellipse"
+              cx="8"
+              cy="8.5"
+              rx="7.5"
+              ry="4"
+              stroke="#03102B"
+            />
+            <path
+              class="password-line"
+              d="M0.5 8.5C7.3 8.5 13.3333 8.5 15.5 8.5"
+              stroke="black"
+            />
+          </svg>
+        </button>
       </div>
-      <div class="error-message" id="error"></div>
-      <button type="submit" id="submit-button" class="submit-button">
-        Войти
+      <div class="form-checkbox">
+        <label for="rememberMe">
+          <input type="checkbox" id="rememberMe" />
+          <span class="normal-text">запомнить меня</span>
+        </label>
+      </div>
+      <div class="error-message" id="Error" aria-live="polite"></div>
+      <button type="submit" id="submit-button" class="submit-button big-text">
+        войти
       </button>
-      <label class="form-group">
-        <input type="checkbox" id="rememberMe" />
-        Запомнить меня
-      </label>
     </form>
     <script type="module" src="./js/auth.js"></script>
   </body>
