@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 	"university-pass/internal/model"
 	"university-pass/internal/repository"
 	"university-pass/internal/service"
@@ -285,4 +286,114 @@ func (h *AdminGuestHandler) Revoke(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sendJSON(w, http.StatusOK, map[string]string{"status": "revoked"})
+}
+
+type AdminLogHandler struct {
+	logRepo *repository.LogRepository
+}
+
+func NewAdminLogHandler(logRepo *repository.LogRepository) *AdminLogHandler {
+	return &AdminLogHandler{logRepo: logRepo}
+}
+
+// List godoc
+// @Summary Список логов
+// @Description Фильтры опциональны. from/to например 2026-07-01T00:00:00Z. direction: enter, exit, unknown.
+// @Tags admin-logs
+// @Produce json
+// @Security AdminBearer
+// @Param user_id query int false "ID пользователя"
+// @Param guest_pass_id query string false "UUID гостевого пропуска"
+// @Param access_point_id query int false "ID точки доступа"
+// @Param direction query string false "enter, exit или unknown"
+// @Param is_allowed query bool false "true/false"
+// @Param from query string false "format"
+// @Param to query string false "format"
+// @Param limit query int false "по умолчанию 100, максимум 500"
+// @Param offset query int false "по умолчанию 0"
+// @Success 200 {array} model.AccessLogResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /admin/logs [get]
+func (h *AdminLogHandler) List(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	filter := repository.ListAccessLogsFilter{
+		Direction: q.Get("direction"),
+	}
+
+	if v := q.Get("user_id"); v != "" {
+		id, err := strconv.Atoi(v)
+		if err != nil {
+			sendError(w, http.StatusBadRequest, "invalid user_id")
+			return
+		}
+		filter.UserID = &id
+	}
+
+	if v := q.Get("guest_pass_id"); v != "" {
+		filter.GuestPassID = &v
+	}
+
+	if v := q.Get("access_point_id"); v != "" {
+		id, err := strconv.Atoi(v)
+		if err != nil {
+			sendError(w, http.StatusBadRequest, "invalid access_point_id")
+			return
+		}
+		filter.AccessPointID = &id
+	}
+
+	if v := q.Get("is_allowed"); v != "" {
+		allowed, err := strconv.ParseBool(v)
+		if err != nil {
+			sendError(w, http.StatusBadRequest, "invalid is_allowed")
+			return
+		}
+		filter.IsAllowed = &allowed
+	}
+
+	if v := q.Get("from"); v != "" {
+		t, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			sendError(w, http.StatusBadRequest, "invalid")
+			return
+		}
+		filter.From = &t
+	}
+
+	if v := q.Get("to"); v != "" {
+		t, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			sendError(w, http.StatusBadRequest, "invalid")
+			return
+		}
+		filter.To = &t
+	}
+
+	if v := q.Get("limit"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			sendError(w, http.StatusBadRequest, "invalid limit")
+			return
+		}
+		filter.Limit = n
+	}
+
+	if v := q.Get("offset"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 {
+			sendError(w, http.StatusBadRequest, "invalid offset")
+			return
+		}
+		filter.Offset = n
+	}
+
+	logs, err := h.logRepo.ListAccessLogs(r.Context(), filter)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	sendJSON(w, http.StatusOK, logs)
 }

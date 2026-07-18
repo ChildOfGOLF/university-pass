@@ -64,6 +64,7 @@ func main() {
 	userAdminHandler := handler.NewAdminUserHandler(userRepo)
 	guestAdminHandler := handler.NewAdminGuestHandler(guestRepo)
 	adminAuthHandler := handler.NewAdminAuthHandler(authService)
+	logAdminHandler := handler.NewAdminLogHandler(logRepo)
 
 	recoverCtx, cancelRecover := context.WithTimeout(context.Background(), 10*time.Second)
 	if err := logService.RecoverInFlight(recoverCtx); err != nil {
@@ -113,6 +114,10 @@ func main() {
 				r.Post("/", guestAdminHandler.Create)
 				r.Get("/", guestAdminHandler.List)
 				r.Post("/{id}/revoke", guestAdminHandler.Revoke)
+			})
+
+			r.Route("/logs", func(r chi.Router) {
+				r.Get("/", logAdminHandler.List)
 			})
 		})
 	})

@@ -47,6 +47,19 @@ type AccessLog struct {
 	LoggedAt      time.Time `json:"logged_at"`
 }
 
+type AccessLogResponse struct {
+	ID          int64     `json:"id"`
+	PersonType  string    `json:"person_type"`
+	FullName    string    `json:"full_name"`
+	Building    string    `json:"building"`
+	AccessPoint string    `json:"access_point"`
+	Gate        string    `json:"gate"`
+	Direction   string    `json:"direction"`
+	IsAllowed   bool      `json:"is_allowed"`
+	Reason      string    `json:"reason"`
+	LoggedAt    time.Time `json:"logged_at"`
+}
+
 type AccessPoint struct {
 	ID          int    `json:"id"`
 	BuildingID  int    `json:"building_id"`
