@@ -239,7 +239,9 @@ func (r *UserRepository) CreateUser(ctx context.Context, p CreateUserParams) (*m
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	var userID int
 	var createdAt time.Time
@@ -303,6 +305,28 @@ func (r *UserRepository) ListUsers(ctx context.Context) ([]*model.User, error) {
 		users = append(users, &u)
 	}
 	return users, rows.Err()
+}
+
+func (r *UserRepository) ListGroups(ctx context.Context) ([]*model.GroupResponse, error) {
+	rows, err := r.db.Pg.Query(ctx, `
+		SELECT id, group_name
+		FROM groups
+		ORDER BY id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list groups: %w", err)
+	}
+	defer rows.Close()
+
+	var groups []*model.GroupResponse
+	for rows.Next() {
+		var g model.GroupResponse
+		if err := rows.Scan(&g.ID, &g.Name); err != nil {
+			return nil, err
+		}
+		groups = append(groups, &g)
+	}
+	return groups, rows.Err()
 }
 
 func (r *UserRepository) UpdateUser(ctx context.Context, userID int, p model.UpdateUserRequest) error {

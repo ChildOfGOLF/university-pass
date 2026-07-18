@@ -119,8 +119,13 @@ func main() {
 			r.Route("/logs", func(r chi.Router) {
 				r.Get("/", logAdminHandler.List)
 			})
+
+			r.Route("/groups", func(r chi.Router) {
+				r.Get("/", userAdminHandler.ListGroups)
+			})
 		})
 	})
+
 	r.Post("/auth/login", authHandler.Login)
 	r.Group(func(r chi.Router) {
 		r.Use(mw.RequireScannerKey(accessRepo))

@@ -133,6 +133,24 @@ func (h *AdminUserHandler) List(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, http.StatusOK, users)
 }
 
+// ListGroups godoc
+// @Summary Список групп
+// @Tags admin-users
+// @Produce json
+// @Security AdminBearer
+// @Success 200 {array} model.GroupResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /groups [get]
+func (h *AdminUserHandler) ListGroups(w http.ResponseWriter, r *http.Request) {
+	groups, err := h.userRepo.ListGroups(r.Context())
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	sendJSON(w, http.StatusOK, groups)
+}
+
 // UpdateUser godoc
 // @Summary Обновить данные пользователя
 // @Tags admin-users

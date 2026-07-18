@@ -36,6 +36,11 @@ type GuestPass struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
+type GroupResponse struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 type AccessLog struct {
 	ID            int64     `json:"id"`
 	UserID        *int      `json:"user_id,omitempty"`
