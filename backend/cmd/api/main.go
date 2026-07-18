@@ -55,7 +55,7 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	guestRepo := repository.NewGuestRepository(db)
 	logRepo := repository.NewLogRepository(db.Pg)
-	authService := service.NewAuthService(userRepo, guestRepo)
+	authService := service.NewAuthService(userRepo, guestRepo, cfg.JWTSecret)
 	logService := service.NewLogService(logRepo, db.Rdb)
 
 	accessRepo := repository.NewAccessPointRepository(db)
@@ -85,7 +85,8 @@ func main() {
 
 	r := chi.NewRouter()
 
-	r.Use(mw.Cors)
+	cors := mw.NewCORS()
+	r.Use(cors.Handler)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
@@ -101,7 +102,7 @@ func main() {
 		r.Post("/auth/login", adminAuthHandler.Login)
 
 		r.Group(func(r chi.Router) {
-			r.Use(mw.RequireRole(userRepo, "admin"))
+			r.Use(mw.RequireRole(userRepo, cfg.JWTSecret, "admin"))
 
 			r.Route("/users", func(r chi.Router) {
 				r.Post("/", userAdminHandler.Create)

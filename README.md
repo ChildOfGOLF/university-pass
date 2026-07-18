@@ -2,15 +2,23 @@
 
 ## Запуск
 
-Внутри в корне
+Переходим в /deploy и создаем .env по примеру
+
+```bash
+   cd deploy
+   cp .env.example .env
+```
+
+Поднимаем проект
 
 ```
-docker-compose up --build
+docker-compose up -d --build
 ```
 
-Стартует бд с одним пользователем, гостем, админом и бэкенд на порту 8080
-
-На http://localhost:8081/swagger/index.html доступна документация
+- Фронт: http://localhost
+- Сканер: http://localhost/scanner
+- Админ: http://localhost/admin.html
+- Документация: http://localhost:8080/swagger/index.html
 
 Остановить и удалить контейнеры:
 

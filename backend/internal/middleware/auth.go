@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"university-pass/internal/config"
 	"university-pass/internal/repository"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,7 +22,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func RequireRole(userRepo *repository.UserRepository, roles ...string) func(http.Handler) http.Handler {
+func RequireRole(userRepo *repository.UserRepository, jwtSecret string, roles ...string) func(http.Handler) http.Handler {
 	allowedRoles := make(map[string]bool, len(roles))
 	for _, r := range roles {
 		allowedRoles[r] = true
@@ -41,7 +40,7 @@ func RequireRole(userRepo *repository.UserRepository, roles ...string) func(http
 
 			claims := &Claims{}
 			token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-				return []byte(config.JWTSecret), nil
+				return []byte(jwtSecret), nil
 			})
 
 			if err != nil || !token.Valid {

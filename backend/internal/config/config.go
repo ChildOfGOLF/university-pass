@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"log"
 	"os"
 )
 
@@ -13,22 +13,14 @@ type Config struct {
 	JWTSecret   string
 }
 
-var JWTSecret = getEnv("JWT_SECRET", "vBS0K4W5DRo2iTQI1JmnuqIouvnHaBbsyvXxqk1Ibhz")
-
 func Load() Config {
-	cfg := Config{
+	return Config{
 		Port:        getEnv("PORT", "8080"),
-		PostgresDSN: getEnv("POSTGRES_DSN", "postgres://postgres:postgres@postgres:5432/unipass?sslmode=disable"),
+		PostgresDSN: mustGetEnv("POSTGRES_DSN"),
 		RedisAddr:   getEnv("REDIS_ADDR", "redis:6379"),
 		RedisPass:   getEnv("REDIS_PASSWORD", ""),
-		JWTSecret:   getEnv("JWT_SECRET", "vBS0K4W5DRo2iTQI1JmnuqIouvnHaBbsyvXxqk1Ibhz"),
+		JWTSecret:   mustGetEnv("JWT_SECRET"),
 	}
-
-	if cfg.JWTSecret == "vBS0K4W5DRo2iTQI1JmnuqIouvnHaBbsyvXxqk1Ibhz" {
-		fmt.Println("using default secret")
-	}
-
-	return cfg
 }
 
 func getEnv(key, def string) string {
@@ -36,4 +28,12 @@ func getEnv(key, def string) string {
 		return v
 	}
 	return def
+}
+
+func mustGetEnv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		log.Fatalf("переменная окружения %s обязательна, но не задана", key)
+	}
+	return v
 }

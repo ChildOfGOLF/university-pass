@@ -6,7 +6,6 @@ import (
 	"encoding/base32"
 	"fmt"
 	"time"
-	"university-pass/internal/config"
 	"university-pass/internal/middleware"
 	"university-pass/internal/model"
 	"university-pass/internal/repository"
@@ -21,12 +20,14 @@ import (
 type AuthService struct {
 	userRepo  *repository.UserRepository
 	guestRepo *repository.GuestRepository
+	jwtSecret string
 }
 
-func NewAuthService(userRepo *repository.UserRepository, guestRepo *repository.GuestRepository) *AuthService {
+func NewAuthService(userRepo *repository.UserRepository, guestRepo *repository.GuestRepository, jwtSecret string) *AuthService {
 	return &AuthService{
 		userRepo:  userRepo,
 		guestRepo: guestRepo,
+		jwtSecret: jwtSecret,
 	}
 }
 
@@ -270,5 +271,5 @@ func (s *AuthService) AdminLogin(ctx context.Context, email, password string) (s
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(config.JWTSecret))
+	return token.SignedString([]byte(s.jwtSecret))
 }
