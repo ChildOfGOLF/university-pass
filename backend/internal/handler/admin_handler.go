@@ -141,7 +141,7 @@ func (h *AdminUserHandler) List(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {array} model.GroupResponse
 // @Failure 401 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
-// @Router /groups [get]
+// @Router /admin/groups [get]
 func (h *AdminUserHandler) ListGroups(w http.ResponseWriter, r *http.Request) {
 	groups, err := h.userRepo.ListGroups(r.Context())
 	if err != nil {
