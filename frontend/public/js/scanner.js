@@ -81,12 +81,12 @@ function showAcceptDenyWindow(status) {
     let src = "";
     let text = "";
     if (status) {
-        src = "frontend/public/styles/images/accept.png";
+        src = "../styles/images/accept.png";
         text = "Разрешено";
         acceptDenyMsg.classList.add('accept');
     }
     else {
-        src = "frontend/public/styles/images/deny.png";
+        src = "../styles/images/deny.png";
         text = "Отклонено";
         acceptDenyMsg.classList.add('deny');
     }

@@ -1,0 +1,23 @@
+.page {
+    animation: backgroundMove 40s linear infinite;
+    will-change: background-position;
+}
+
+@keyframes backgroundMove {
+    0% {
+        background-position: center center;
+    }
+
+    25% {
+        background-position: -10px -200px;
+
+    }
+
+    50% {
+        background-position: -15px -300px;
+    }
+
+    100% {
+        background-position: center center;
+    }
+}
