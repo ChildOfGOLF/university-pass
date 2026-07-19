@@ -1,0 +1,17 @@
+/* @import url('./fonts.css'); */
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    min-width: min-content;
+    /* font-family: "Geometria"; */
+    text-shadow: 0 0.1cqw 1cqw rgba(0, 0, 0, 0.2);
+    /* background-image: url('../images/background-gradient.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed; */
+    font-family: var(--main-font-family);
+    font-size: 1cqw;
+}
