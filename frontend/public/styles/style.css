@@ -297,3 +297,59 @@ input[type="checkbox"]:checked~span::after {
 #admin-submit-button {
     margin-top: 84px;
 }
+
+.admin-page {
+    background-image: linear-gradient(-45deg, #03102B 0%, #3B046B 100%);
+    block-size: 100vh;
+    display: flex;
+    align-items: center;
+    justify-items: center;
+}
+
+.admin-panel {
+    background-color: #FFEFEF;
+    width: 85%;
+    aspect-ratio: 1/0.8;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: row;
+    padding: 4% 5%;
+}
+
+.admin-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.tab-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.table-container {
+    grid-column: span 2;
+}
+
+.table-container>table {
+    width: 100%;
+
+}
+
+.actions-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+td {
+    outline: 1px solid black;
+}
