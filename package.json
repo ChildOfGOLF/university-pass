@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@liquid-js/qr-code-styling": "^5.5.0"
+  }
+}
