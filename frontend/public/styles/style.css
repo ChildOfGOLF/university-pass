@@ -352,6 +352,11 @@ input[type="checkbox"]:checked~span::after {
     gap: 30px;
 }
 
+.admin-modal {
+    block-size: 40vh;
+    overflow-y: scroll;
+}
+
 td {
     outline: 1px solid black;
 }

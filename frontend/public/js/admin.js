@@ -15,6 +15,8 @@ function clearError() {
     errorElement.textContent = "";
 }
 
+
+
 form.addEventListener("submit", async(event) => {
     event.preventDefault();
     clearError();
@@ -115,6 +117,21 @@ async function loadUsers() {
     }
 }
 
+async function checkAuthAndInit() {
+    const savedToken = localStorage.getItem("admin_token");
+    if (!savedToken) return;
+
+    try {
+        await apiMethods.getUsers(savedToken);
+        showAdminPanel();
+        loadUsers();
+    } catch (err) {
+        
+        localStorage.removeItem("admin_token");
+    }
+}
+
+checkAuthAndInit();
 
 //Удаление юзера
 window.deleteUser = async (userId) => {
