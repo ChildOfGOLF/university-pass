@@ -1,0 +1,21 @@
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  backend:
+    ports:
+      - "8080:8080"
+
+  frontend:
+    ports:
+      - "80:80"
+    develop:
+      watch:
+        - action: sync
+          path: ../frontend/public
+          target: /usr/share/nginx/html

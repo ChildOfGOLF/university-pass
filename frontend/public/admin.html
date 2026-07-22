@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="" />
   </head>
   <body class="admin-page page">
-    <section id="login-section">
+    <section id="login-section" class="">
       <form id="admin-login-form" class="login-form">
         <div class="form-input">
           <label for="admin-email" class="form-label normal-text">почта</label>
@@ -38,7 +38,7 @@
       </form>
     </section>
 
-    <section class="visually-hidden" id="admin-panel">
+    <section class="admin-panel visually-hidden" id="admin-panel">
       <div class="admin-container">
         <div class="tabs">
           <button
@@ -74,7 +74,7 @@
               </thead>
               <tbody id="users-table-body">
                 <tr>
-                  <td colspan="9">Загрузка</td>
+                  <td colspan="8">Загрузка</td>
                 </tr>
               </tbody>
             </table>
@@ -253,12 +253,6 @@
                 >номер телефона</label
               >
               <input type="text" id="update-user-phone" required />
-            </div>
-            <div class="form-input">
-              <label for="update-user-is_active" class="form-label"
-                >активен</label
-              >
-              <input type="checkbox" id="update-user-is_active" />
             </div>
             <button class="submit-button big-text" type="submit">
               сохранить
