@@ -309,7 +309,7 @@ input[type="checkbox"]:checked~span::after {
 .admin-panel {
     background-color: #FFEFEF;
     width: 85%;
-    aspect-ratio: 1/0.8;
+    block-size: 85vh;
     margin: 0 auto;
     display: flex;
     flex-direction: row;
@@ -337,6 +337,8 @@ input[type="checkbox"]:checked~span::after {
 
 .table-container {
     grid-column: span 2;
+    block-size: 40vh;
+    overflow-y: auto;
 }
 
 .table-container>table {
