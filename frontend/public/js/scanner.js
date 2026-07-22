@@ -211,7 +211,6 @@ if (cameraSelector) {
     });
 }
 
-// Создание сканера с поддержкой цветных QR-кодов
 scanner = new QrScanner(video, result => { stopScanning(scanner); setResult(result.data); }, {
     onDecodeError: error => {
         if (error.name !== error.NO_QR_CODE_FOUND)
@@ -219,9 +218,11 @@ scanner = new QrScanner(video, result => { stopScanning(scanner); setResult(resu
     },
     highlightScanRegion: true,
     highlightCodeOutline: true,
-    scanInvertedColors: true, // Распознавание инвертированных цветов (цветные QR)
     camera: currentCamera || undefined
 });
+
+scanner.setInversionMode('both'); 
+scanner.setGrayscaleWeights(0.3, 0.5, 0.2, false); 
 
 async function startScanning() {
     if (!(await QrScanner.hasCamera())) {
@@ -248,9 +249,10 @@ async function startScanning() {
             },
             highlightScanRegion: true,
             highlightCodeOutline: true,
-            scanInvertedColors: true,  // Цветные QR-коды
             camera: currentCamera || undefined
         });
+        scanner.setInversionMode('both');
+        scanner.setGrayscaleWeights(0.3, 0.5, 0.2, false);
     }
     
     try {
