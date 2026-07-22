@@ -28,10 +28,17 @@ catch (err) {
 }
 
 async function renderPass() {
+    const QROptions = {
+        width: 240,
+        color: {
+            dark: '#FFEFEF',
+            light: '#00000000'
+        }
+    };
     try {
         let code = totp.generate();
         let codeToCanvas = code.toString() + localStorage.getItem("device_id").toString();
-        await QRCode.toCanvas(canvas, codeToCanvas, {width: 201});
+        await QRCode.toCanvas(canvas, codeToCanvas, QROptions);
         errorElement.textContent = "";
         contentElement.hidden = false;
         let device_id = localStorage.getItem("device_id");

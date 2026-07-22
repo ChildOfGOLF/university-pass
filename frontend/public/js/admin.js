@@ -115,6 +115,21 @@ async function loadUsers() {
     }
 }
 
+async function checkAuthAndInit() {
+    const savedToken = localStorage.getItem("admin_token");
+    if (!savedToken) return;
+
+    try {
+        await apiMethods.getUsers(savedToken);
+        showAdminPanel();
+        loadUsers();
+    } catch (err) {
+
+        localStorage.removeItem("admin_token");
+    }
+}
+
+checkAuthAndInit();
 
 //Удаление юзера
 window.deleteUser = async (userId) => {
@@ -143,7 +158,6 @@ window.openUpdateUser = (userId) => {
     document.getElementById("update-user-first_name").value = user.first_name;
     document.getElementById("update-user-patronymic").value = user.patronymic;
     document.getElementById("update-user-phone").value = user.phone;
-    document.getElementById("update-user-is_active").checked = user.is_active;
 
     document.getElementById("modal-update-user").showPopover();
 }
@@ -158,7 +172,6 @@ if (formUpdateUser) {
         const token = localStorage.getItem("admin_token");
         const data = {
             first_name: document.getElementById("update-user-first_name").value.trim(),
-            is_active: document.getElementById("update-user-is_active").checked,
             last_name: document.getElementById("update-user-second_name").value.trim(),
             patronymic: document.getElementById("update-user-patronymic").value.trim(),
             phone: document.getElementById("update-user-phone").value.trim()
